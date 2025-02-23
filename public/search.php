@@ -22,7 +22,7 @@ $result = $stmt->get_result();
 <head>
     <meta charset="UTF-8">
     <title>Search Results for "<?php echo htmlspecialchars($keyword); ?>"</title>
-    <link rel="stylesheet" href="../src/main.css">
+    <link rel="stylesheet" href="/src/main.css">
 </head>
 <body>
     <header>

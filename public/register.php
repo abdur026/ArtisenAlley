@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
-    <link rel="stylesheet" href="../src/main.css"> <!-- Link your CSS -->
+    <link rel="stylesheet" href="/src/main.css">
     <script src="../src/main.js" defer></script>   <!-- Link your JS -->
 </head>
 <body>

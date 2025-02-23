@@ -34,7 +34,7 @@ $reviewsResult = $stmtReviews->get_result();
 <head>
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($product['name']); ?></title>
-    <link rel="stylesheet" href="../src/main.css">
+    <link rel="stylesheet" href="/src/main.css">
 </head>
 <body>
     <header>

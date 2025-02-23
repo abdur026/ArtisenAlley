@@ -25,7 +25,7 @@ if (!$user) {
 <head>
     <meta charset="UTF-8">
     <title>Your Profile</title>
-    <link rel="stylesheet" href="../src/main.css">
+    <link rel="stylesheet" href="/src/main.css">
 </head>
 <body>
     <header>
