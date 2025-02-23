@@ -2,9 +2,27 @@
 include __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../config/db.php';
 
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Debug database connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+echo "<!-- Database connected successfully -->\n";
+
 // Fetch recent products
 $products_query = "SELECT * FROM products ORDER BY created_at DESC LIMIT 6";
 $products_result = $conn->query($products_query);
+
+// Check for query errors
+if (!$products_result) {
+    die("Error fetching products: " . $conn->error);
+}
+
+// Debug product count
+echo "<!-- Number of products found: " . $products_result->num_rows . " -->\n";
 
 // Fetch categories
 $categories_query = "SELECT DISTINCT category FROM products LIMIT 6";
@@ -26,9 +44,16 @@ $categories_result = $conn->query($categories_query);
         <div class="container">
             <h2 class="section-title">Latest Artisan Pieces</h2>
             <div class="products-grid">
-                <?php while($product = $products_result->fetch_assoc()): ?>
+                <?php 
+                if ($products_result->num_rows > 0):
+                    while($product = $products_result->fetch_assoc()): 
+                        echo "<!-- Processing product: " . htmlspecialchars($product['name']) . " -->\n";
+                ?>
                 <div class="product-card">
-                    <img src="/public/images/products/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="product-image">
+                    <img src="/assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+                         alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                         class="product-image"
+                         onerror="this.src='/assets/images/placeholder.jpg'">
                     <div class="product-info">
                         <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
@@ -36,7 +61,12 @@ $categories_result = $conn->query($categories_query);
                         <a href="/product.php?id=<?php echo $product['id']; ?>" class="cta-button">View Details</a>
                     </div>
                 </div>
-                <?php endwhile; ?>
+                <?php 
+                    endwhile; 
+                else:
+                    echo "<p class='no-products'>No products found. Please check the database.</p>";
+                endif;
+                ?>
             </div>
         </div>
     </section>
