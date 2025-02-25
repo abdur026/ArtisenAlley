@@ -50,10 +50,10 @@ $categories_result = $conn->query($categories_query);
                         echo "<!-- Processing product: " . htmlspecialchars($product['name']) . " -->\n";
                 ?>
                 <div class="product-card">
-                    <img src="/assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
-                         alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                    <img src="/public/assets/images/<?php echo htmlspecialchars($product['image'] ?? ''); ?>" 
+                         alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>" 
                          class="product-image"
-                         onerror="this.src='/assets/images/placeholder.jpg'">
+                         onerror="this.src='/public/assets/images/placeholder.jpg'">
                     <div class="product-info">
                         <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
