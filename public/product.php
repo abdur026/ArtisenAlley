@@ -48,8 +48,11 @@ $reviewsResult = $stmtReviews->get_result();
         <div class="product-details">
             <div class="product-gallery">
                 <div class="main-image">
-                    <img src="<?php echo htmlspecialchars($product['image_url']); ?>" 
-                         alt="<?php echo htmlspecialchars($product['name']); ?>">
+                    <img src="<?php echo ($product['image_url'] !== null && $product['image_url'] !== '') 
+                        ? htmlspecialchars($product['image_url']) 
+                        : '/assets/images/default-product.png'; ?>" 
+                         alt="<?php echo htmlspecialchars($product['name'] ?? 'Product Image'); ?>"
+                         class="product-image">
                 </div>
             </div>
             
