@@ -3,18 +3,18 @@ session_start();
 require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-   
+    
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
-    // Basic validation
+    //  validation if the user exits
     if (!$email || !$password) {
         $_SESSION['error'] = "All fields are required.";
         header("Location: ../public/login.php");
         exit;
     }
 
-    // a query to fetch user by email
+    // get the user by email from the database
     $stmt = $conn->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -250,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             .form-group input {
-                font-size: 16px; /* Prevents zoom on mobile */
+                font-size: 16px; 
             }
         }
     </style>
