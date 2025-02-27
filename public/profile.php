@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Retrieve user information from the database
 $user_id = $_SESSION['user_id'];
-$stmt = $conn->prepare("SELECT name, email, profile_image FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT name, email FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -19,6 +19,8 @@ if (!$user) {
     echo "User not found.";
     exit;
 }
+// Set a default profile image
+$user['profile_image'] = 'default-avatar.jpg';
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../config/db.php';
 
 // Function to calculate average rating
@@ -14,213 +15,345 @@ function calculateAverageRating($reviews) {
     return round($total / $count, 1);
 }
 
-// Check if product ID is provided in URL
-if (!isset($_GET['id'])) {
-    echo "No product specified.";
-    exit;
-}
-
-$productId = intval($_GET['id']);
+// Get product ID from URL
+$product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 // Fetch product details
 $stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
-$stmt->bind_param("i", $productId);
+$stmt->bind_param("i", $product_id);
 $stmt->execute();
-$productResult = $stmt->get_result();
+$result = $stmt->get_result();
+$product = $result->fetch_assoc();
 
-if ($productResult->num_rows === 0) {
-    echo "Product not found.";
+// If product not found, redirect to home
+if (!$product) {
+    header("Location: index.php");
     exit;
 }
 
-$product = $productResult->fetch_assoc();
-
 // Fetch reviews for the product
 $stmtReviews = $conn->prepare("SELECT r.*, u.name as reviewer_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.product_id = ? ORDER BY r.created_at DESC");
-$stmtReviews->bind_param("i", $productId);
+$stmtReviews->bind_param("i", $product_id);
 $stmtReviews->execute();
 $reviewsResult = $stmtReviews->get_result();
 ?>
-<?php include '../includes/header.php'; ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($product['name']); ?> - Artisan Alley</title>
+    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2c3e50;
+        }
 
-<main class="product-page">
-    <div class="container">
-        <div class="product-details">
-            <div class="product-gallery">
-                <div class="main-image">
-                    <img src="<?php echo ($product['image_url'] !== null && $product['image_url'] !== '') 
-                        ? htmlspecialchars($product['image_url']) 
-                        : '/assets/images/default-product.png'; ?>" 
-                         alt="<?php echo htmlspecialchars($product['name'] ?? 'Product Image'); ?>"
-                         class="product-image">
-                </div>
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar a {
+            color: #2c3e50;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar a:hover {
+            background: #f8f9fa;
+            color: #3498db;
+        }
+
+        .product-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .product-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-category {
+            color: #3498db;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-name {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .product-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e74c3c;
+            margin-bottom: 1.5rem;
+        }
+
+        .product-description {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .quantity-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .quantity-input {
+            width: 100px;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .add-to-cart {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 1.2rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: auto;
+        }
+
+        .add-to-cart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .product-meta {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #7f8c8d;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dcfce7;
+            color: #16a34a;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .product-details {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .product-image {
+                height: 300px;
+            }
+
+            .product-name {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/public/index.php">Home</a>
+            <div>
+                <a href="/public/cart.php">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                    <?php if (!empty($_SESSION['cart'])): ?>
+                        <span>(<?php echo array_sum($_SESSION['cart']); ?>)</span>
+                    <?php endif; ?>
+                </a>
+                <?php if(isset($_SESSION['user_id'])): ?>
+                    <a href="/public/profile.php">Profile</a>
+                    <a href="/public/logout.php">Logout</a>
+                <?php else: ?>
+                    <a href="/public/login.php">Login</a>
+                    <a href="/public/register.php">Register</a>
+                <?php endif; ?>
             </div>
+        </div>
+    </nav>
+
+    <div class="product-container">
+        <div class="product-details">
+            <img src="/public/assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+                 alt="<?php echo htmlspecialchars($product['name']); ?>"
+                 class="product-image"
+                 onerror="this.src='/public/assets/images/placeholder.jpg'">
             
             <div class="product-info">
-                <nav class="breadcrumb">
-                    <a href="/index.php">Home</a> >
-                    <a href="/search.php?category=<?php echo urlencode($product['category']); ?>">
-                        <?php echo htmlspecialchars($product['category']); ?>
-                    </a> >
-                    <span><?php echo htmlspecialchars($product['name']); ?></span>
-                </nav>
-
-                <h1><?php echo htmlspecialchars($product['name']); ?></h1>
+                <div class="product-category">
+                    <i class="fas fa-tag"></i> <?php echo htmlspecialchars($product['category']); ?>
+                </div>
+                <h1 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h1>
+                <div class="product-price">$<?php echo number_format($product['price'], 2); ?></div>
+                <p class="product-description"><?php echo htmlspecialchars($product['description']); ?></p>
                 
-                <div class="product-meta">
-                    <div class="price">$<?php echo number_format($product['price'], 2); ?></div>
-                    <?php 
-                    $averageRating = calculateAverageRating($reviewsResult);
-                    if ($averageRating > 0): 
-                    ?>
-                    <div class="rating">
-                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <i class="fas fa-star<?php echo $i <= $averageRating ? '' : '-o'; ?>"></i>
-                        <?php endfor; ?>
-                        <span>(<?php echo $reviewsResult->num_rows; ?> reviews)</span>
+                <form action="cart.php" method="POST" class="add-to-cart-form">
+                    <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                    
+                    <div class="quantity-selector">
+                        <label for="quantity" class="quantity-label">Quantity:</label>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1" class="quantity-input">
                     </div>
-                    <?php endif; ?>
-                </div>
 
-                <div class="product-description">
-                    <?php echo htmlspecialchars($product['description']); ?>
-                </div>
+                    <button type="submit" class="add-to-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        Add to Cart
+                    </button>
+                </form>
 
-                <div class="product-actions">
-                    <?php if ($product['stock'] > 0): ?>
-                        <div class="stock-status in-stock">
-                            <i class="fas fa-check-circle"></i> In Stock (<?php echo intval($product['stock']); ?> available)
-                        </div>
-                        <form action="/cart.php" method="POST" class="add-to-cart-form">
-                            <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                            <div class="quantity-selector">
-                                <button type="button" class="quantity-btn minus">-</button>
-                                <input type="number" name="quantity" value="1" min="1" max="<?php echo $product['stock']; ?>">
-                                <button type="button" class="quantity-btn plus">+</button>
-                            </div>
-                            <button type="submit" class="add-to-cart-btn">
-                                <i class="fas fa-shopping-cart"></i> Add to Cart
-                            </button>
-                        </form>
-                    <?php else: ?>
-                        <div class="stock-status out-of-stock">
-                            <i class="fas fa-times-circle"></i> Out of Stock
-                        </div>
-                    <?php endif; ?>
+                <div class="product-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-truck"></i>
+                        Free shipping on orders over $50
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-undo"></i>
+                        30-day return policy
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-shield-alt"></i>
+                        Secure checkout
+                    </div>
                 </div>
             </div>
         </div>
-
-        <section class="reviews-section">
-            <div class="container">
-                <h2>Customer Reviews</h2>
-                <div class="reviews-summary">
-                    <div class="average-rating">
-                        <div class="rating-number"><?php echo $averageRating; ?></div>
-                        <div class="rating-stars">
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i class="fas fa-star<?php echo $i <= $averageRating ? '' : '-o'; ?>"></i>
-                            <?php endfor; ?>
-                        </div>
-                        <div class="rating-count"><?php echo $reviewsResult->num_rows; ?> reviews</div>
-                    </div>
-                </div>
-
-                <div class="reviews-list">
-                    <?php if ($reviewsResult->num_rows > 0): ?>
-                        <?php while ($review = $reviewsResult->fetch_assoc()): ?>
-                            <div class="review-card">
-                                <div class="review-header">
-                                    <div class="reviewer-info">
-                                        <i class="fas fa-user-circle"></i>
-                                        <span class="reviewer-name"><?php echo htmlspecialchars($review['reviewer_name']); ?></span>
-                                    </div>
-                                    <div class="review-rating">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star<?php echo $i <= $review['rating'] ? '' : '-o'; ?>"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                </div>
-                                <div class="review-content">
-                                    <?php echo htmlspecialchars($review['comment']); ?>
-                                </div>
-                                <div class="review-footer">
-                                    <span class="review-date">
-                                        <i class="far fa-calendar-alt"></i>
-                                        <?php echo date('F j, Y', strtotime($review['created_at'])); ?>
-                                    </span>
-                                </div>
-                            </div>
-                        <?php endwhile; ?>
-                    <?php else: ?>
-                        <div class="no-reviews">
-                            <i class="far fa-comment-alt"></i>
-                            <p>No reviews yet. Be the first to review this product!</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <?php if (isset($_SESSION['user_id'])): ?>
-                    <div class="add-review-section">
-                        <h3>Write a Review</h3>
-                        <form action="add_review.php" method="POST" class="review-form">
-                            <input type="hidden" name="product_id" value="<?php echo $productId; ?>">
-                            
-                            <div class="rating-input">
-                                <label>Your Rating:</label>
-                                <div class="star-rating">
-                                    <?php for ($i = 5; $i >= 1; $i--): ?>
-                                        <input type="radio" id="star<?php echo $i; ?>" name="rating" value="<?php echo $i; ?>" required>
-                                        <label for="star<?php echo $i; ?>"><i class="fas fa-star"></i></label>
-                                    <?php endfor; ?>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="comment">Your Review:</label>
-                                <textarea id="comment" name="comment" required 
-                                          placeholder="Share your thoughts about this product..."></textarea>
-                            </div>
-
-                            <button type="submit" class="submit-review-btn">
-                                <i class="fas fa-paper-plane"></i> Submit Review
-                            </button>
-                        </form>
-                    </div>
-                <?php else: ?>
-                    <div class="login-prompt">
-                        <p><i class="fas fa-lock"></i> Please <a href="login.php">log in</a> to leave a review.</p>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </section>
     </div>
-</main>
 
-<?php include '../includes/footer.php'; ?>
+    <?php if (isset($_SESSION['cart_message'])): ?>
+        <div class="success-message">
+            <i class="fas fa-check-circle"></i>
+            <?php echo $_SESSION['cart_message']; unset($_SESSION['cart_message']); ?>
+        </div>
+    <?php endif; ?>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Quantity selector functionality
-    const quantityInput = document.querySelector('.quantity-selector input');
-    const minusBtn = document.querySelector('.quantity-btn.minus');
-    const plusBtn = document.querySelector('.quantity-btn.plus');
-    const maxStock = <?php echo $product['stock']; ?>;
+    <script>
+        // Auto-hide success message
+        const successMessage = document.querySelector('.success-message');
+        if (successMessage) {
+            setTimeout(() => {
+                successMessage.style.opacity = '0';
+                setTimeout(() => successMessage.remove(), 300);
+            }, 3000);
+        }
 
-    if (minusBtn && plusBtn && quantityInput) {
-        minusBtn.addEventListener('click', () => {
-            const currentValue = parseInt(quantityInput.value);
-            if (currentValue > 1) {
-                quantityInput.value = currentValue - 1;
-            }
+        // Form submission
+        document.querySelector('.add-to-cart-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('cart.php', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    const message = document.createElement('div');
+                    message.className = 'success-message';
+                    message.innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        Item added to cart successfully!
+                    `;
+                    document.body.appendChild(message);
+                    
+                    setTimeout(() => {
+                        message.style.opacity = '0';
+                        setTimeout(() => message.remove(), 300);
+                    }, 3000);
+                }
+            });
         });
-
-        plusBtn.addEventListener('click', () => {
-            const currentValue = parseInt(quantityInput.value);
-            if (currentValue < maxStock) {
-                quantityInput.value = currentValue + 1;
-            }
-        });
-    }
-});
-</script>
+    </script>
+</body>
+</html>

@@ -35,7 +35,7 @@ $categories_result = $conn->query($categories_query);
         <div class="container">
             <h2>Discover Unique Handcrafted Treasures</h2>
             <p>Support independent artisans and find one-of-a-kind pieces that tell a story. Each item is crafted with passion and dedication.</p>
-            <a href="/search.php" class="cta-button">Explore Collection</a>
+            <a href="/public/search.php" class="cta-button">Explore Collection</a>
         </div>
     </section>
 
