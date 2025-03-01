@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     //  validation if the user exits
     if (!$email || !$password) {
         $_SESSION['error'] = "All fields are required.";
-        header("Location: ../public/login.php");
+        header("Location: login.php");
         exit;
     }
 
@@ -33,12 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             $_SESSION['error'] = "Incorrect password.";
-            header("Location: ../public/login.php");
+            header("Location: login.php");
             exit;
         }
     } else {
         $_SESSION['error'] = "User not found.";
-        header("Location: ../public/login.php");
+        header("Location: login.php");
         exit;
     }
 }
