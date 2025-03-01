@@ -422,7 +422,9 @@ while ($row = $featuredResult->fetch_assoc()) {
                     <?php foreach ($featuredProducts as $product): ?>
                         <div class="product-card">
                             <div class="product-image">
-                                <img src="<?php echo !empty($product['image']) ? '/uploads/' . htmlspecialchars($product['image']) : '/assets/images/default-product.png'; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+                                     alt="<?php echo htmlspecialchars($product['name']); ?>"
+                                     onerror="this.src='assets/images/placeholder.jpg'">
                             </div>
                             <div class="product-info">
                                 <h3><?php echo htmlspecialchars($product['name']); ?></h3>
@@ -491,7 +493,9 @@ while ($row = $featuredResult->fetch_assoc()) {
                     <?php foreach ($products as $product): ?>
                         <div class="product-card">
                             <div class="product-image">
-                                <img src="<?php echo !empty($product['image']) ? '/uploads/' . htmlspecialchars($product['image']) : '/assets/images/default-product.png'; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+                                     alt="<?php echo htmlspecialchars($product['name']); ?>"
+                                     onerror="this.src='assets/images/placeholder.jpg'">
                             </div>
                             <div class="product-info">
                                 <h3><?php echo htmlspecialchars($product['name']); ?></h3>

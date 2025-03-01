@@ -348,9 +348,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $grandTotal += $total;
                 ?>
                     <div class="cart-item">
-                        <img src="/public/assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+                        <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
                              alt="<?php echo htmlspecialchars($product['name']); ?>"
-                             onerror="this.src='/public/assets/images/placeholder.jpg'">
+                             onerror="this.src='assets/images/placeholder.jpg'">
                         <div class="product-name"><?php echo htmlspecialchars($product['name']); ?></div>
                         <div class="quantity-controls">
                             <form method="POST" action="cart.php" style="display: flex; gap: 0.5rem; align-items: center;">

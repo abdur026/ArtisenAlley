@@ -35,7 +35,6 @@ $categories_result = $conn->query($categories_query);
         <div class="container">
             <h2>Discover Unique Handcrafted Treasures</h2>
             <p>Support independent artisans and find one-of-a-kind pieces that tell a story. Each item is crafted with passion and dedication.</p>
-            <a href="/public/search.php" class="cta-button">Explore Collection</a>
         </div>
     </section>
 
@@ -50,10 +49,10 @@ $categories_result = $conn->query($categories_query);
                         echo "<!-- Processing product: " . htmlspecialchars($product['name']) . " -->\n";
                 ?>
                 <div class="product-card">
-                    <img src="/public/assets/images/<?php echo htmlspecialchars($product['image'] ?? ''); ?>" 
+                    <img src="assets/images/<?php echo htmlspecialchars($product['image'] ?? ''); ?>" 
                          alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>" 
                          class="product-image"
-                         onerror="this.src='/public/assets/images/placeholder.jpg'">
+                         onerror="this.src='assets/images/placeholder.jpg'">
                     <div class="product-info">
                         <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
@@ -78,7 +77,10 @@ $categories_result = $conn->query($categories_query);
             <div class="categories-grid">
                 <?php while($category = $categories_result->fetch_assoc()): ?>
                 <div class="category-card">
-                    <img src="/public/images/categories/<?php echo strtolower($category['category']); ?>.jpg" alt="<?php echo htmlspecialchars($category['category']); ?>" class="category-image">
+                    <img src="assets/images/categories/<?php echo strtolower(str_replace(' ', '-', $category['category'])); ?>.jpg" 
+                         alt="<?php echo htmlspecialchars($category['category']); ?>" 
+                         class="category-image"
+                         onerror="this.src='assets/images/placeholder.jpg'">
                     <div class="category-overlay">
                         <h3><?php echo htmlspecialchars($category['category']); ?></h3>
                     </div>

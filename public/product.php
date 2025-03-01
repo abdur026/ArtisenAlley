@@ -266,10 +266,10 @@ $reviewsResult = $stmtReviews->get_result();
 
     <div class="product-container">
         <div class="product-details">
-            <img src="/public/assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+            <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
                  alt="<?php echo htmlspecialchars($product['name']); ?>"
                  class="product-image"
-                 onerror="this.src='/public/assets/images/placeholder.jpg'">
+                 onerror="this.src='assets/images/placeholder.jpg'">
             
             <div class="product-info">
                 <div class="product-category">
