@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Retrieve user information from the database
 $user_id = $_SESSION['user_id'];
-$stmt = $conn->prepare("SELECT name, email FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT name, email, profile_image FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -19,8 +19,19 @@ if (!$user) {
     echo "User not found.";
     exit;
 }
-// Set a default profile image
-$user['profile_image'] = 'default-avatar.jpg';
+
+// Set a default profile image if none exists
+if (!$user['profile_image']) {
+    $user['profile_image'] = 'default-avatar.jpg';
+    $profile_image_data = null;
+} else {
+    $image_path = "../uploads/" . $user['profile_image'];
+    if (file_exists($image_path)) {
+        $profile_image_data = base64_encode(file_get_contents($image_path));
+    } else {
+        $profile_image_data = null;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -55,7 +66,7 @@ $user['profile_image'] = 'default-avatar.jpg';
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('/assets/images/pattern.png') repeat;
+            background: rgba(0, 0, 0, 0.1);
             opacity: 0.1;
         }
 
@@ -254,9 +265,15 @@ $user['profile_image'] = 'default-avatar.jpg';
 
     <div class="profile-container">
         <div class="profile-header">
-            <img src="<?php echo $user['profile_image'] ? '/uploads/' . htmlspecialchars($user['profile_image']) : '/assets/images/default-avatar.png'; ?>" 
-                 alt="Profile Picture" 
-                 class="profile-avatar">
+            <?php if ($profile_image_data): ?>
+                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
+                     alt="Profile Picture" 
+                     class="profile-avatar">
+            <?php else: ?>
+                <img src="/assets/images/default-avatar.png" 
+                     alt="Profile Picture" 
+                     class="profile-avatar">
+            <?php endif; ?>
             <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
             <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
         </div>
@@ -316,9 +333,15 @@ $user['profile_image'] = 'default-avatar.jpg';
                     <h2 class="section-title">Profile Information</h2>
                     <form action="update_profile.php" method="POST" enctype="multipart/form-data">
                         <div class="image-upload">
-                            <img src="<?php echo $user['profile_image'] ? '/uploads/' . htmlspecialchars($user['profile_image']) : '/assets/images/default-avatar.png'; ?>" 
-                                 alt="Current Profile Picture" 
-                                 class="current-image">
+                            <?php if ($profile_image_data): ?>
+                                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
+                                     alt="Current Profile Picture" 
+                                     class="current-image">
+                            <?php else: ?>
+                                <img src="/assets/images/default-avatar.png" 
+                                     alt="Current Profile Picture" 
+                                     class="current-image">
+                            <?php endif; ?>
                             <label class="upload-button">
                                 <i class="fas fa-camera"></i>
                                 Change Photo
