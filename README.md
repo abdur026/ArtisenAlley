@@ -130,20 +130,10 @@ A modern e-commerce platform showcasing handcrafted artisanal products, built wi
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 👥 Authors
 
-- Your Name - *Initial work* - [YourGitHub](https://github.com/yourusername)
+- Khizar Aamir, Abdur Rehman, Haider Ali
 
-## 🙏 Acknowledgments
-
-- Thanks to all contributors who have helped shape ArtisanAlley
-- Special thanks to the artisan community for inspiration
-- Font Awesome for the beautiful icons
-- All beta testers and early adopters
 
 ---
 
