@@ -2,6 +2,9 @@
 session_start();
 require_once '../config/db.php';
 
+// Enable debugging temporarily
+$_SESSION['debug'] = true;
+
 function calculateAverageRating($reviews) {
     if ($reviews->num_rows === 0) return 0;
     $total = 0;
@@ -31,10 +34,27 @@ if (!$product) {
 }
 
 
-$stmtReviews = $conn->prepare("SELECT r.*, u.name as reviewer_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.product_id = ? ORDER BY r.created_at DESC");
+$stmtReviews = $conn->prepare("SELECT r.*, u.name as reviewer_name 
+                              FROM reviews r 
+                              JOIN users u ON r.user_id = u.id 
+                              WHERE r.product_id = ? 
+                              ORDER BY r.created_at DESC");
 $stmtReviews->bind_param("i", $product_id);
 $stmtReviews->execute();
 $reviewsResult = $stmtReviews->get_result();
+
+// Add debugging information
+if (isset($_SESSION['debug'])) {
+    echo "<pre>";
+    echo "Product ID: " . $product_id . "\n";
+    echo "Number of reviews: " . $reviewsResult->num_rows . "\n";
+    while ($row = $reviewsResult->fetch_assoc()) {
+        echo "Review by: " . htmlspecialchars($row['reviewer_name']) . 
+             " (User ID: " . $row['user_id'] . ")\n";
+    }
+    echo "</pre>";
+    $reviewsResult->data_seek(0);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
