@@ -239,6 +239,185 @@ $reviewsResult = $stmtReviews->get_result();
                 font-size: 2rem;
             }
         }
+
+        .reviews-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .review-form-container {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .review-form-container h3 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+        }
+
+        .rating-input {
+            margin-bottom: 1.5rem;
+        }
+
+        .stars {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 0.5rem;
+        }
+
+        .stars input {
+            display: none;
+        }
+
+        .stars label {
+            cursor: pointer;
+            color: #e0e0e0;
+            font-size: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .stars label:hover,
+        .stars label:hover ~ label,
+        .stars input:checked ~ label {
+            color: #f1c40f;
+        }
+
+        .review-input textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .review-input textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+        }
+
+        .submit-review {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .submit-review:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .login-prompt {
+            text-align: center;
+            padding: 2rem;
+            background: #f8fafc;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .login-prompt a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .average-rating {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .rating-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .total-reviews {
+            color: #7f8c8d;
+        }
+
+        .review-card {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .reviewer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .reviewer-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .review-rating {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .review-rating .fas.fa-star.filled {
+            color: #f1c40f;
+        }
+
+        .review-rating .fas.fa-star {
+            color: #e0e0e0;
+        }
+
+        .review-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .review-comment {
+            color: #2c3e50;
+            line-height: 1.6;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -307,6 +486,85 @@ $reviewsResult = $stmtReviews->get_result();
                         Secure checkout
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="reviews-section">
+            <h2 class="section-title">Customer Reviews</h2>
+            
+            <?php if(isset($_SESSION['user_id'])): ?>
+                <div class="review-form-container">
+                    <h3>Write a Review</h3>
+                    <form action="add_review.php" method="POST" class="review-form">
+                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                        
+                        <div class="rating-input">
+                            <label>Your Rating:</label>
+                            <div class="stars">
+                                <?php for($i = 5; $i >= 1; $i--): ?>
+                                    <input type="radio" id="star<?php echo $i; ?>" name="rating" value="<?php echo $i; ?>" required>
+                                    <label for="star<?php echo $i; ?>"><i class="fas fa-star"></i></label>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+
+                        <div class="review-input">
+                            <label for="comment">Your Review:</label>
+                            <textarea id="comment" name="comment" required rows="4" placeholder="Share your thoughts about this product..."></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-review">
+                            <i class="fas fa-paper-plane"></i> Submit Review
+                        </button>
+                    </form>
+                </div>
+            <?php else: ?>
+                <div class="login-prompt">
+                    <p>Please <a href="login.php">log in</a> to write a review.</p>
+                </div>
+            <?php endif; ?>
+
+            <div class="reviews-list">
+                <?php 
+                $average_rating = calculateAverageRating($reviewsResult);
+                if($average_rating > 0):
+                ?>
+                    <div class="average-rating">
+                        <span class="rating-number"><?php echo $average_rating; ?></span>
+                        <div class="stars">
+                            <?php
+                            for($i = 1; $i <= 5; $i++) {
+                                if($i <= $average_rating) {
+                                    echo '<i class="fas fa-star"></i>';
+                                } elseif($i - 0.5 <= $average_rating) {
+                                    echo '<i class="fas fa-star-half-alt"></i>';
+                                } else {
+                                    echo '<i class="far fa-star"></i>';
+                                }
+                            }
+                            ?>
+                        </div>
+                        <span class="total-reviews">(<?php echo $reviewsResult->num_rows; ?> reviews)</span>
+                    </div>
+                <?php endif; ?>
+
+                <?php while($review = $reviewsResult->fetch_assoc()): ?>
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-info">
+                                <span class="reviewer-name"><?php echo htmlspecialchars($review['reviewer_name']); ?></span>
+                                <div class="review-rating">
+                                    <?php for($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fas fa-star <?php echo $i <= $review['rating'] ? 'filled' : ''; ?>"></i>
+                                    <?php endfor; ?>
+                                </div>
+                            </div>
+                            <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
+                        </div>
+                        <p class="review-comment"><?php echo htmlspecialchars($review['comment']); ?></p>
+                    </div>
+                <?php endwhile; ?>
             </div>
         </div>
     </div>
