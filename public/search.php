@@ -2,16 +2,13 @@
 session_start();
 require_once '../config/db.php';
 
-// Get search keyword from URL parameter
 $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $category = isset($_GET['category']) ? $_GET['category'] : '';
 
-// Prepare the base query
 $sql = "SELECT * FROM products WHERE 1=1";
 $params = [];
 $types = "";
 
-// Add keyword search condition if provided
 if (!empty($keyword)) {
     $sql .= " AND (name LIKE ? OR description LIKE ?)";
     $searchParam = "%" . $keyword . "%";
@@ -20,14 +17,12 @@ if (!empty($keyword)) {
     $types .= "ss";
 }
 
-// Add category filter if provided
 if (!empty($category)) {
     $sql .= " AND category = ?";
     $params[] = $category;
     $types .= "s";
 }
 
-// Prepare and execute the query
 $stmt = $conn->prepare($sql);
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
@@ -39,7 +34,6 @@ while ($row = $result->fetch_assoc()) {
     $products[] = $row;
 }
 
-// Get all categories for the filter dropdown
 $categoryQuery = "SELECT DISTINCT category FROM products ORDER BY category";
 $categoryResult = $conn->query($categoryQuery);
 $categories = [];
@@ -47,7 +41,6 @@ while ($row = $categoryResult->fetch_assoc()) {
     $categories[] = $row['category'];
 }
 
-// Get featured products (newest 4 products)
 $featuredQuery = "SELECT * FROM products ORDER BY created_at DESC LIMIT 4";
 $featuredResult = $conn->query($featuredQuery);
 $featuredProducts = [];

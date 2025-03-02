@@ -2,7 +2,6 @@
 session_start();
 require_once '../config/db.php';
 
-// Function to calculate average rating
 function calculateAverageRating($reviews) {
     if ($reviews->num_rows === 0) return 0;
     $total = 0;
@@ -11,27 +10,27 @@ function calculateAverageRating($reviews) {
         $total += $review['rating'];
         $count++;
     }
-    $reviews->data_seek(0); // Reset pointer
+    $reviews->data_seek(0); 
     return round($total / $count, 1);
 }
 
-// Get product ID from URL
+
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Fetch product details
+
 $stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->bind_param("i", $product_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $product = $result->fetch_assoc();
 
-// If product not found, redirect to home
+
 if (!$product) {
     header("Location: index.php");
     exit;
 }
 
-// Fetch reviews for the product
+
 $stmtReviews = $conn->prepare("SELECT r.*, u.name as reviewer_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.product_id = ? ORDER BY r.created_at DESC");
 $stmtReviews->bind_param("i", $product_id);
 $stmtReviews->execute();
@@ -320,7 +319,7 @@ $reviewsResult = $stmtReviews->get_result();
     <?php endif; ?>
 
     <script>
-        // Auto-hide success message
+        
         const successMessage = document.querySelector('.success-message');
         if (successMessage) {
             setTimeout(() => {
@@ -329,7 +328,7 @@ $reviewsResult = $stmtReviews->get_result();
             }, 3000);
         }
 
-        // Form submission
+        
         document.querySelector('.add-to-cart-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);

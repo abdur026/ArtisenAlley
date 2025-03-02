@@ -3,29 +3,23 @@ session_start();
 require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
-    //  validation if the user exits
     if (!$email || !$password) {
         $_SESSION['error'] = "All fields are required.";
         header("Location: login.php");
         exit;
     }
 
-    // get the user by email from the database
     $stmt = $conn->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Check if a user exists with that email
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
-        // Verify the password
         if (password_verify($password, $user['password'])) {
-            // Set session variables for user login
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role'];

@@ -2,23 +2,19 @@
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Sanitize input
     $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
-    // Basic validation
     if (!$name || !$email || !$password) {
         $_SESSION['error'] = "All fields are required.";
         header("Location: register.php");
         exit;
     }
 
-    // Hash the password securely
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    // Prepare and execute INSERT query
-    require_once '../config/db.php';  // Ensure your database connection is loaded
+    require_once '../config/db.php';
     $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
     $stmt->bind_param("sss", $name, $email, $hashedPassword);
 

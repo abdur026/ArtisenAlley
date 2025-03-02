@@ -2,13 +2,13 @@
 session_start();
 require_once '../config/db.php';
 
-// Check if user is logged in and is an admin
+
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header("Location: index.php");
     exit;
 }
 
-// Fetch all users from the database
+
 $query = "SELECT id, name, email, role FROM users ORDER BY created_at DESC";
 $result = $conn->query($query);
 ?>
@@ -55,7 +55,7 @@ $result = $conn->query($query);
                         <td><?php echo htmlspecialchars($user['email']); ?></td>
                         <td><?php echo htmlspecialchars($user['role']); ?></td>
                         <td>
-                            <!-- Enable/Disable Actions; for example, a link to an action page (e.g., toggle_user.php) -->
+     
                             <?php if ($user['role'] !== 'admin'): ?>
                                 <a href="toggle_user.php?id=<?php echo $user['id']; ?>">
                                     <?php echo ($user['role'] === 'disabled' ? 'Enable' : 'Disable'); ?>

@@ -10,7 +10,6 @@ ini_set('display_errors', 1);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-echo "<!-- Database connected successfully -->\n";
 
 // Fetch recent products
 $products_query = "SELECT * FROM products ORDER BY created_at DESC LIMIT 6";
@@ -22,7 +21,6 @@ if (!$products_result) {
 }
 
 // Debug product count
-echo "<!-- Number of products found: " . $products_result->num_rows . " -->\n";
 
 // Fetch categories
 $categories_query = "SELECT DISTINCT category FROM products LIMIT 6";
@@ -46,7 +44,6 @@ $categories_result = $conn->query($categories_query);
                 <?php 
                 if ($products_result->num_rows > 0):
                     while($product = $products_result->fetch_assoc()): 
-                        echo "<!-- Processing product: " . htmlspecialchars($product['name']) . " -->\n";
                 ?>
                 <div class="product-card">
                     <img src="assets/images/<?php echo htmlspecialchars($product['image'] ?? ''); ?>" 

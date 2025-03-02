@@ -2,14 +2,13 @@
 session_start();
 require_once '../config/db.php';
 
-// Ensure user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error'] = "Please log in to checkout.";
     header("Location: login.php");
     exit;
 }
 
-// Check if the cart is empty
+
 if (empty($_SESSION['cart'])) {
     $_SESSION['error'] = "Your cart is empty.";
     header("Location: cart.php");
@@ -20,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'];
     $grandTotal = 0;
     
-    // Calculate the total price for the order
+  
     foreach ($_SESSION['cart'] as $product_id => $quantity) {
         $stmt = $conn->prepare("SELECT price FROM products WHERE id = ?");
         $stmt->bind_param("i", $product_id);
@@ -32,15 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // Insert a new order into the orders table
+ 
     $stmt = $conn->prepare("INSERT INTO orders (user_id, total_price, status) VALUES (?, ?, 'pending')");
     $stmt->bind_param("id", $user_id, $grandTotal);
     if ($stmt->execute()) {
         $order_id = $stmt->insert_id;
         
-        // Insert each cart item as an order item in order_items table
+    
         foreach ($_SESSION['cart'] as $product_id => $quantity) {
-            // Retrieve the product's price
+          
             $stmtProd = $conn->prepare("SELECT price FROM products WHERE id = ?");
             $stmtProd->bind_param("i", $product_id);
             $stmtProd->execute();
@@ -55,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        // Clear the shopping cart
+     
         $_SESSION['cart'] = [];
         $_SESSION['success'] = "Order placed successfully!";
         header("Location: order_confirmation.php?order_id=" . $order_id);

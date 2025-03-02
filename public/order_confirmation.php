@@ -2,7 +2,7 @@
 session_start();
 require_once '../config/db.php';
 
-// Ensure an order ID is provided and the user is logged in
+
 if (!isset($_GET['order_id']) || !isset($_SESSION['user_id'])) {
     echo "No order specified or you're not logged in.";
     exit;
@@ -10,7 +10,7 @@ if (!isset($_GET['order_id']) || !isset($_SESSION['user_id'])) {
 
 $order_id = intval($_GET['order_id']);
 
-// Retrieve order details ensuring it belongs to the logged-in user
+
 $stmt = $conn->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ?");
 $stmt->bind_param("ii", $order_id, $_SESSION['user_id']);
 $stmt->execute();
@@ -21,7 +21,7 @@ if ($orderResult->num_rows === 0) {
 }
 $order = $orderResult->fetch_assoc();
 
-// Retrieve order items along with product names
+
 $stmtItems = $conn->prepare("SELECT oi.*, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
 $stmtItems->bind_param("i", $order_id);
 $stmtItems->execute();

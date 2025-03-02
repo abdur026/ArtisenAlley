@@ -3,14 +3,14 @@ session_start();
 require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Sanitize and validate input
+   
     $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
     $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_STRING);
     $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
     $category = filter_input(INPUT_POST, 'category', FILTER_SANITIZE_STRING);
     $stock = filter_input(INPUT_POST, 'stock', FILTER_VALIDATE_INT);
 
-    // Handle file upload for the product image
+   
     if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
         $uploadDir = '../uploads/';
         if (!file_exists($uploadDir)) {
@@ -27,14 +27,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $filename = 'default_product.png';
     }
 
-    // Ensure the user is logged in
+  
     if (!isset($_SESSION['user_id'])) {
         $_SESSION['error'] = "You must be logged in to add a product.";
         header("Location: login.php");
         exit;
     }
     
-    // Insert product into the database
+    
     $stmt = $conn->prepare("INSERT INTO products (user_id, name, description, price, category, stock, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
     $user_id = $_SESSION['user_id'];
     $stmt->bind_param("issdiss", $user_id, $name, $description, $price, $category, $stock, $filename);

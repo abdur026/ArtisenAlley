@@ -2,13 +2,13 @@
 session_start();
 require_once '../config/db.php';
 
-// Check if user is logged in
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-// Retrieve user information from the database
+
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT name, email, profile_image FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
@@ -20,7 +20,6 @@ if (!$user) {
     exit;
 }
 
-// Set a default profile image if none exists
 if (!$user['profile_image']) {
     $user['profile_image'] = 'default-avatar.jpg';
     $profile_image_data = null;
@@ -372,7 +371,7 @@ if (!$user['profile_image']) {
     <?php include '../includes/footer.php'; ?>
 
     <script>
-        // Preview image before upload
+      
         document.getElementById('profile_image').addEventListener('change', function(e) {
             if (e.target.files && e.target.files[0]) {
                 const reader = new FileReader();

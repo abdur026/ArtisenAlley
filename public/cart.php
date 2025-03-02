@@ -1,12 +1,12 @@
 <?php
 session_start();
 
-// Initialize shopping cart if it doesn't exist
+
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-// Process cart actions: add, update, remove
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
@@ -403,7 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-        // Add smooth animations when removing items
+        
         document.querySelectorAll('.remove-btn').forEach(button => {
             button.addEventListener('click', function(e) {
                 const cartItem = this.closest('.cart-item');
