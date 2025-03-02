@@ -380,6 +380,20 @@ if (!$user['profile_image']) {
             background: var(--secondary-color);
             transform: translateY(-2px);
         }
+
+        .view-all-reviews {
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .view-all-reviews:hover {
+            color: var(--secondary-color);
+        }
     </style>
 </head>
 <body>
@@ -422,8 +436,14 @@ if (!$user['profile_image']) {
                         </a>
                     </li>
                     <li>
-                        <a href="#my-reviews">
+                        <a href="reviews.php">
                             <i class="fas fa-star"></i>
+                            Community Reviews
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#my-reviews">
+                            <i class="fas fa-comment"></i>
                             My Reviews
                         </a>
                     </li>
@@ -489,7 +509,10 @@ if (!$user['profile_image']) {
                 </section>
 
                 <section id="my-reviews" class="profile-section">
-                    <h2 class="section-title">My Reviews</h2>
+                    <h2 class="section-title">
+                        My Reviews
+                        <a href="reviews.php" class="view-all-reviews">View All Community Reviews</a>
+                    </h2>
                     <div class="reviews-grid">
                         <?php
                         $reviews_query = "SELECT r.*, p.name as product_name, p.image as product_image 

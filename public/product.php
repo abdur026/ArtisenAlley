@@ -536,7 +536,7 @@ $reviewsResult = $stmtReviews->get_result();
                             <?php
                             for($i = 1; $i <= 5; $i++) {
                                 if($i <= $average_rating) {
-                                    echo '<i class="fas fa-star"></i>';
+                                    echo '<i class="fas fa-star filled"></i>';
                                 } elseif($i - 0.5 <= $average_rating) {
                                     echo '<i class="fas fa-star-half-alt"></i>';
                                 } else {
@@ -549,7 +549,10 @@ $reviewsResult = $stmtReviews->get_result();
                     </div>
                 <?php endif; ?>
 
-                <?php while($review = $reviewsResult->fetch_assoc()): ?>
+                <?php 
+                $reviewsResult->data_seek(0);
+                while($review = $reviewsResult->fetch_assoc()): 
+                ?>
                     <div class="review-card">
                         <div class="review-header">
                             <div class="reviewer-info">
