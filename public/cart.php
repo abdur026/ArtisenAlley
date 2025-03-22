@@ -1,24 +1,52 @@
 <?php
 session_start();
+require_once '../config/db.php';
+require_once '../includes/breadcrumb.php';
 
-
+// Initialize the cart if it doesn't exist
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
+// Check if this is an AJAX request
+$is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
+// Handle add to cart action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add') {
+    $product_id = intval($_POST['product_id']);
+    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+    
+    // Ensure quantity is at least 1
+    if ($quantity < 1) {
+        $quantity = 1;
+    }
+    
+    // Add to cart
+    if (isset($_SESSION['cart'][$product_id])) {
+        $_SESSION['cart'][$product_id] += $quantity;
+    } else {
+        $_SESSION['cart'][$product_id] = $quantity;
+    }
+    
+    // Return JSON response for AJAX requests
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'message' => 'Item added to cart successfully!',
+            'cart_count' => array_sum($_SESSION['cart'])
+        ]);
+        exit;
+    }
+    
+    // Redirect for non-AJAX requests
+    header("Location: product.php?id=$product_id&success=1");
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
-            case 'add':
-                $product_id = intval($_POST['product_id']);
-                $quantity = intval($_POST['quantity']);
-                if (isset($_SESSION['cart'][$product_id])) {
-                    $_SESSION['cart'][$product_id] += $quantity;
-                } else {
-                    $_SESSION['cart'][$product_id] = $quantity;
-                }
-                break;
             case 'update':
                 $product_id = intval($_POST['product_id']);
                 $quantity = intval($_POST['quantity']);
@@ -318,6 +346,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
 
     <div class="cart-container">
+        <?php
+        // Generate breadcrumbs
+        $breadcrumbs = [
+            ['name' => 'Home', 'url' => 'index.php'],
+            ['name' => 'Shopping Cart']
+        ];
+        echo generate_breadcrumbs($breadcrumbs);
+        ?>
         <div class="cart-header">
             <h1><i class="fas fa-shopping-cart"></i> Your Shopping Cart</h1>
         </div>
@@ -333,7 +369,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php else: ?>
             <?php
-            require_once '../config/db.php';
             $grandTotal = 0;
             ?>
             <div class="cart-items">

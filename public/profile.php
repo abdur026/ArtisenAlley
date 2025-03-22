@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../includes/breadcrumb.php';
 
 
 if (!isset($_SESSION['user_id'])) {
@@ -400,6 +401,14 @@ if (!$user['profile_image']) {
     <?php include '../includes/header.php'; ?>
 
     <div class="profile-container">
+        <?php
+        // Generate breadcrumbs
+        $breadcrumbs = [
+            ['name' => 'Home', 'url' => 'index.php'],
+            ['name' => 'Profile']
+        ];
+        echo generate_breadcrumbs($breadcrumbs);
+        ?>
         <div class="profile-header">
             <?php if ($profile_image_data): ?>
                 <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 

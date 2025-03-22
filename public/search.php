@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../includes/breadcrumb.php';
 
 $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $category = isset($_GET['category']) ? $_GET['category'] : '';
@@ -384,7 +385,26 @@ while ($row = $featuredResult->fetch_assoc()) {
     </style>
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <header>
+        <h1>Search Results</h1>
+    </header>
+
+    <?php
+    // Generate breadcrumbs
+    $breadcrumbs = [
+        ['name' => 'Home', 'url' => 'index.php']
+    ];
+    
+    if (!empty($search_query)) {
+        $breadcrumbs[] = ['name' => 'Search Results: "' . htmlspecialchars($search_query) . '"'];
+    } elseif (!empty($category)) {
+        $breadcrumbs[] = ['name' => 'Category: ' . htmlspecialchars($category)];
+    } else {
+        $breadcrumbs[] = ['name' => 'All Products'];
+    }
+    
+    echo generate_breadcrumbs($breadcrumbs);
+    ?>
 
     <div class="search-container">
         <div class="search-header">
