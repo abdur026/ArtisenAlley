@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once '../config/db.php';
-require_once '../includes/breadcrumb.php';
+require_once __DIR__ . '/../config/paths.php';
+require_once __DIR__ . '/../includes/breadcrumb.php';
 
 $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $category = isset($_GET['category']) ? $_GET['category'] : '';
@@ -55,7 +55,7 @@ while ($row = $featuredResult->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore Artisan Treasures - Artisan Alley</title>
-    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -395,8 +395,8 @@ while ($row = $featuredResult->fetch_assoc()) {
         ['name' => 'Home', 'url' => 'index.php']
     ];
     
-    if (!empty($search_query)) {
-        $breadcrumbs[] = ['name' => 'Search Results: "' . htmlspecialchars($search_query) . '"'];
+    if (!empty($keyword)) {
+        $breadcrumbs[] = ['name' => 'Search Results: "' . htmlspecialchars($keyword) . '"'];
     } elseif (!empty($category)) {
         $breadcrumbs[] = ['name' => 'Category: ' . htmlspecialchars($category)];
     } else {
