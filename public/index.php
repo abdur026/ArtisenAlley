@@ -22,12 +22,15 @@ try {
     }
 
     // Fetch recent products
-    $products_query = "SELECT * FROM products ORDER BY created_at DESC LIMIT 6";
+    $products_query = "SELECT p.*, u.username as artisan_name 
+                      FROM products p 
+                      LEFT JOIN users u ON p.seller_id = u.id 
+                      ORDER BY p.created_at DESC LIMIT 6";
     $products_result = $conn->query($products_query);
     $products_available = ($products_result && $products_result->num_rows > 0);
     
-    // Fetch categories
-    $categories_query = "SELECT DISTINCT category FROM products LIMIT 6";
+    // Fetch categories - using the categories table instead of products table
+    $categories_query = "SELECT * FROM categories LIMIT 6";
     $categories_result = $conn->query($categories_query);
     $categories_available = ($categories_result && $categories_result->num_rows > 0);
     
@@ -117,7 +120,7 @@ $predefined_categories = [
                 // Use database categories if available
                 if ($categories_available):
                     while($category = $categories_result->fetch_assoc()): 
-                        $cat_name = htmlspecialchars($category['category'] ?? '');
+                        $cat_name = htmlspecialchars($category['name'] ?? '');
                         $image_name = strtolower(str_replace(' ', '-', $cat_name)) . '.jpg';
                 ?>
                 <div class="category-card">
