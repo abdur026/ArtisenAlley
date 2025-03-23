@@ -26,7 +26,7 @@ require_once __DIR__ . "/../config/paths.php";
                         <li><a href="<?php echo url('/profile.php'); ?>"><i class="fas fa-user"></i> Profile</a></li>
                         <li><a href="<?php echo url('/cart.php'); ?>"><i class="fas fa-shopping-cart"></i> Cart</a></li>
                         <li><a href="<?php echo url('/logout.php'); ?>"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                        <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
+                        <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin']): ?>
                             <li><a href="<?php echo url('/admin_dashboard.php'); ?>"><i class="fas fa-cog"></i> Admin</a></li>
                         <?php endif; ?>
                     <?php else: ?>
