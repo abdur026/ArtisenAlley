@@ -5,13 +5,12 @@ require_once __DIR__ . '/../config/paths.php';
 $registration_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
     $first_name = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_STRING);
     $last_name = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
-    if (!$username || !$email || !$password || !$first_name || !$last_name) {
+    if (!$email || !$password || !$first_name || !$last_name) {
         $_SESSION['error'] = "All fields are required.";
         header("Location: " . url('/register.php'));
         exit;
@@ -25,6 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if($conn->connect_error) {
             throw new Exception("Database connection failed: " . $conn->connect_error);
         }
+        
+        // Use email as the username to ensure uniqueness
+        $username = $email;
         
         $stmt = $conn->prepare("INSERT INTO users (username, email, password, first_name, last_name) VALUES (?, ?, ?, ?, ?)");
         $stmt->bind_param("sssss", $username, $email, $hashedPassword, $first_name, $last_name);
@@ -300,12 +302,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ?>
 
         <form action="<?php echo url('/register.php'); ?>" method="POST" onsubmit="return validateRegistrationForm();">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required placeholder="Enter your username">
-                <i class="fas fa-user"></i>
-            </div>
-
             <div class="form-group">
                 <label for="first_name">First Name</label>
                 <input type="text" id="first_name" name="first_name" required placeholder="Enter your first name">
