@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../includes/breadcrumb.php';
+require_once '../config/paths.php';
 
 // Enable debugging temporarily
 $_SESSION['debug'] = true;
@@ -30,7 +31,7 @@ $product = $result->fetch_assoc();
 
 
 if (!$product) {
-    header("Location: index.php");
+    header("Location: " . url('/index.php'));
     exit;
 }
 
@@ -63,7 +64,7 @@ if (isset($_SESSION['debug'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($product['name']); ?> - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo url('/src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -444,20 +445,20 @@ if (isset($_SESSION['debug'])) {
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
+            <a href="<?php echo url('/index.php'); ?>">Home</a>
             <div>
-                <a href="/public/cart.php">
+                <a href="<?php echo url('/cart.php'); ?>">
                     <i class="fas fa-shopping-cart"></i> Cart
                     <?php if (!empty($_SESSION['cart'])): ?>
                         <span>(<?php echo array_sum($_SESSION['cart']); ?>)</span>
                     <?php endif; ?>
                 </a>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
+                    <a href="<?php echo url('/profile.php'); ?>">Profile</a>
+                    <a href="<?php echo url('/logout.php'); ?>">Logout</a>
                 <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
+                    <a href="<?php echo url('/login.php'); ?>">Login</a>
+                    <a href="<?php echo url('/register.php'); ?>">Register</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -466,9 +467,9 @@ if (isset($_SESSION['debug'])) {
     <div class="product-container">
         <?php
         // Generate breadcrumbs
-        $category_url = "search.php?category=" . urlencode($product['category']);
+        $category_url = url('/search.php?category=' . urlencode($product['category']));
         $breadcrumbs = [
-            ['name' => 'Home', 'url' => 'index.php'],
+            ['name' => 'Home', 'url' => url('/index.php')],
             ['name' => $product['category'], 'url' => $category_url],
             ['name' => $product['name']]
         ];
@@ -476,10 +477,10 @@ if (isset($_SESSION['debug'])) {
         ?>
         
         <div class="product-details">
-            <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+            <img src="<?php echo url('/assets/images/' . htmlspecialchars($product['image'])); ?>" 
                  alt="<?php echo htmlspecialchars($product['name']); ?>"
                  class="product-image"
-                 onerror="this.src='assets/images/placeholder.jpg'">
+                 onerror="this.src='<?php echo url('/assets/images/placeholder.jpg'); ?>'">
             
             <div class="product-info">
                 <div class="product-category">
@@ -489,7 +490,7 @@ if (isset($_SESSION['debug'])) {
                 <div class="product-price">$<?php echo number_format($product['price'], 2); ?></div>
                 <p class="product-description"><?php echo htmlspecialchars($product['description']); ?></p>
                 
-                <form action="cart.php" method="POST" class="add-to-cart-form">
+                <form action="<?php echo url('/cart.php'); ?>" method="POST" class="add-to-cart-form">
                     <input type="hidden" name="action" value="add">
                     <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                     
@@ -555,7 +556,7 @@ if (isset($_SESSION['debug'])) {
                 </div>
             <?php else: ?>
                 <div class="login-prompt">
-                    <p><a href="login.php">Sign in</a> to leave a review.</p>
+                    <p><a href="<?php echo url('/login.php'); ?>">Sign in</a> to leave a review.</p>
                 </div>
             <?php endif; ?>
 
@@ -570,7 +571,7 @@ if (isset($_SESSION['debug'])) {
                         <div class="review" data-review-id="<?php echo $review['id']; ?>">
                             <div class="review-header">
                                 <div class="reviewer-info">
-                                    <img src="<?php echo $review['profile_image'] ? 'uploads/profile/' . htmlspecialchars($review['profile_image']) : 'assets/images/default-profile.png'; ?>" 
+                                    <img src="<?php echo $review['profile_image'] ? url('/uploads/profile/' . htmlspecialchars($review['profile_image'])) : url('/assets/images/default-profile.png'); ?>" 
                                         alt="<?php echo htmlspecialchars($review['reviewer_name']); ?>" 
                                         class="reviewer-image">
                                     <div class="reviewer-details">
@@ -624,7 +625,7 @@ if (isset($_SESSION['debug'])) {
                 <div class="review" data-review-id="${review.id}">
                     <div class="review-header">
                         <div class="reviewer-info">
-                            <img src="${review.profile_image ? 'uploads/profile/' + review.profile_image : 'assets/images/default-profile.png'}" 
+                            <img src="${review.profile_image ? '<?php echo url('/uploads/profile/'); ?>' + review.profile_image : '<?php echo url('/assets/images/default-profile.png'); ?>'}" 
                                 alt="${review.reviewer_name}" 
                                 class="reviewer-image">
                             <div class="reviewer-details">
@@ -649,7 +650,7 @@ if (isset($_SESSION['debug'])) {
             
             // Set up the AJAX request
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'add_review.php', true);
+            xhr.open('POST', '<?php echo url('/add_review.php'); ?>', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             
             xhr.onload = function() {
@@ -706,7 +707,7 @@ if (isset($_SESSION['debug'])) {
         // Function to check for new reviews
         function checkForNewReviews() {
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `get_reviews.php?product_id=${productId}&last_timestamp=${encodeURIComponent(latestReviewTimestamp)}`, true);
+            xhr.open('GET', `<?php echo url('/get_reviews.php'); ?>?product_id=${productId}&last_timestamp=${encodeURIComponent(latestReviewTimestamp)}`, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             
             xhr.onload = function() {
@@ -749,35 +750,6 @@ if (isset($_SESSION['debug'])) {
         
         // Check for new reviews every 10 seconds
         setInterval(checkForNewReviews, 10000);
-        
-        // Initial check for any new reviews that might have been added since page load
-        setTimeout(checkForNewReviews, 1000);
-        
-        // Add to cart functionality
-        document.querySelector('.add-to-cart-form')?.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            
-            fetch('cart.php', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    const message = document.createElement('div');
-                    message.className = 'success-message';
-                    message.innerHTML = `
-                        <i class="fas fa-check-circle"></i>
-                        Item added to cart successfully!
-                    `;
-                    document.body.appendChild(message);
-                    
-                    setTimeout(() => {
-                        message.style.opacity = '0';
-                        setTimeout(() => message.remove(), 300);
-                    }, 3000);
-                }
-            });
-        });
     </script>
 </body>
 </html>

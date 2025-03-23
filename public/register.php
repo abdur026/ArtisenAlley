@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../config/paths.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
@@ -8,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$name || !$email || !$password) {
         $_SESSION['error'] = "All fields are required.";
-        header("Location: register.php");
+        header("Location: " . url('/register.php'));
         exit;
     }
 
@@ -20,10 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($stmt->execute()) {
         $_SESSION['success'] = "Registration successful! Please log in.";
-        header("Location: login.php");
+        header("Location: " . url('/login.php'));
     } else {
         $_SESSION['error'] = "Error: " . $stmt->error;
-        header("Location: register.php");
+        header("Location: " . url('/register.php'));
     }
     exit;
 }
@@ -35,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo url('/src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -261,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .strength-medium { width: 66.66%; background: #f1c40f; }
         .strength-strong { width: 100%; background: #2ecc71; }
     </style>
-    <script src="../src/main.js" defer></script>
+    <script src="<?php echo url('/src/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="register-container">
@@ -281,7 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         ?>
 
-        <form action="register.php" method="POST" onsubmit="return validateRegistrationForm();">
+        <form action="<?php echo url('/register.php'); ?>" method="POST" onsubmit="return validateRegistrationForm();">
             <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your full name">
@@ -313,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="login-link">
-            <p>Already have an account? <a href="login.php">Sign in here</a></p>
+            <p>Already have an account? <a href="<?php echo url('/login.php'); ?>">Sign in here</a></p>
         </div>
     </div>
     <script>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/paths.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
@@ -8,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$email || !$password) {
         $_SESSION['error'] = "All fields are required.";
-        header("Location: login.php");
+        header("Location: " . url('/login.php'));
         exit;
     }
 
@@ -23,16 +24,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role'];
-            header("Location: ../index.php");
+            header("Location: " . url('/index.php'));
             exit;
         } else {
             $_SESSION['error'] = "Incorrect password.";
-            header("Location: login.php");
+            header("Location: " . url('/login.php'));
             exit;
         }
     } else {
         $_SESSION['error'] = "User not found.";
-        header("Location: login.php");
+        header("Location: " . url('/login.php'));
         exit;
     }
 }
@@ -44,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo url('/src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -200,35 +201,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 10px;
-            animation: slideIn 0.5s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
         .alert i {
-            font-size: 1.2rem;
+            margin-right: 0.8rem;
+            font-size: 1.1rem;
         }
 
         .alert-error {
-            background-color: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
+            background-color: #fdedee;
+            color: #e74c3c;
+            border-left: 4px solid #e74c3c;
         }
 
         .alert-success {
-            background-color: #dcfce7;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            background-color: #eef7ee;
+            color: #27ae60;
+            border-left: 4px solid #27ae60;
         }
 
         @media (max-width: 600px) {
@@ -267,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         ?>
 
-        <form action="login.php" method="POST">
+        <form action="<?php echo url('/login.php'); ?>" method="POST">
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">
@@ -284,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="register-link">
-            <p>Don't have an account? <a href="register.php">Create one here</a></p>
+            <p>Don't have an account? <a href="<?php echo url('/register.php'); ?>">Create one here</a></p>
         </div>
     </div>
 </body>
