@@ -11,10 +11,10 @@ ini_set('display_errors', 1);
 
 if ($is_production) {
     // UBCO server configuration
-    $servername = "localhost"; // Database can only be connected to from localhost on the server
-    $username = "qrehman"; // Your CWL
-    $password = "qrehman"; // Initially your CWL, should be changed for security
-    $dbname = "qrehman"; // Your database name is your CWL
+    $servername = "localhost";
+    $username = "qrehman";
+    $password = "qrehman";
+    $dbname = "qrehman";
 } else {
     // Local database configuration
     $servername = "localhost";
@@ -33,9 +33,6 @@ try {
         error_log($error_message);
         
         if ($is_production) {
-            // Add a comment to the error for easy identification
-            echo "<!-- DB Connection Error: " . htmlspecialchars($conn->connect_error) . " -->";
-            
             // Show user-friendly error in production
             echo "<div style='margin: 50px auto; max-width: 800px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; font-family: Arial, sans-serif;'>";
             echo "<h2>Database Connection Error</h2>";
