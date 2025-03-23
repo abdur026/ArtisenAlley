@@ -4,26 +4,17 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 session_start();
-require_once '../config/paths.php';
+require_once __DIR__ . '/../config/paths.php';
 
-// Debug paths - now only shows when debug_paths parameter is explicitly set
-if (isset($_GET['debug_paths'])) {
-    echo "<pre style='background:#f5f5f5;padding:10px;border:1px solid #ccc;'>";
-    echo "===== LOGIN PAGE DEBUG INFO =====\n";
-    echo "Server Name: " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? '') . "\n";
-    echo "Request URI: " . htmlspecialchars($_SERVER['REQUEST_URI'] ?? '') . "\n";
-    echo "Script Name: " . htmlspecialchars($_SERVER['SCRIPT_NAME'] ?? '') . "\n";
-    echo "Is UBCO Server: " . (strpos($_SERVER['SERVER_NAME'] ?? '', 'cosc360.ok.ubc.ca') !== false ? 'Yes' : 'No') . "\n";
-    echo "BASE_URL: " . (defined('BASE_URL') ? BASE_URL : 'Not defined') . "\n";
-    echo "SITE_ROOT: " . (defined('SITE_ROOT') ? SITE_ROOT : 'Not defined') . "\n";
-    echo "============================\n";
-    echo "</pre>";
+// If user is already logged in, redirect to home
+if (isset($_SESSION['user_id'])) {
+    header("Location: " . url('/index.php'));
+    exit;
 }
 
+$login_error = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Include database connection only when processing the form
-    require_once '../config/db.php';
-    
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
@@ -33,28 +24,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_role'] = $user['role'];
-            header("Location: " . url('/index.php'));
-            exit;
-        } else {
-            $_SESSION['error'] = "Incorrect password.";
-            header("Location: " . url('/login.php'));
-            exit;
+    try {
+        require_once __DIR__ . '/../config/db.php';
+        
+        if($conn->connect_error) {
+            throw new Exception("Database connection failed: " . $conn->connect_error);
         }
-    } else {
-        $_SESSION['error'] = "User not found.";
-        header("Location: " . url('/login.php'));
-        exit;
+        
+        $stmt = $conn->prepare("SELECT id, password, username, first_name, last_name, is_admin FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+            
+            if (password_verify($password, $user['password'])) {
+                // Login successful - set session variables
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['user_fullname'] = $user['first_name'] . ' ' . $user['last_name'];
+                $_SESSION['is_admin'] = $user['is_admin'];
+                
+                // Redirect to homepage or dashboard
+                header("Location: " . url('/index.php'));
+                exit;
+            } else {
+                throw new Exception("Invalid password.");
+            }
+        } else {
+            throw new Exception("No user found with that email address.");
+        }
+    } catch (Exception $e) {
+        $login_error = "Login failed: " . $e->getMessage();
+        error_log("Login error: " . $e->getMessage());
     }
 }
 ?>
@@ -291,6 +294,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php echo htmlspecialchars($_SESSION['success']); ?>
             </div>
             <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+
+        <?php if ($login_error): ?>
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($login_error); ?>
+            </div>
         <?php endif; ?>
 
         <form action="<?php echo url('/login.php'); ?>" method="post">
