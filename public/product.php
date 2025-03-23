@@ -570,7 +570,7 @@ if (isset($_SESSION['debug'])) {
                         <div class="review" data-review-id="<?php echo $review['id']; ?>">
                             <div class="review-header">
                                 <div class="reviewer-info">
-                                    <img src="<?php echo $review['profile_image'] ? 'uploads/profile/' . htmlspecialchars($review['profile_image']) : 'assets/images/default-profile.png'; ?>" 
+                                    <img src="<?php echo $review['profile_image'] ? '/uploads/profile/' . htmlspecialchars($review['profile_image']) : '/assets/images/default-avatar.png'; ?>" 
                                         alt="<?php echo htmlspecialchars($review['reviewer_name']); ?>" 
                                         class="reviewer-image">
                                     <div class="reviewer-details">
@@ -624,7 +624,7 @@ if (isset($_SESSION['debug'])) {
                 <div class="review" data-review-id="${review.id}">
                     <div class="review-header">
                         <div class="reviewer-info">
-                            <img src="${review.profile_image ? 'uploads/profile/' + review.profile_image : 'assets/images/default-profile.png'}" 
+                            <img src="${review.profile_image ? '/uploads/profile/' + review.profile_image : '/assets/images/default-avatar.png'}" 
                                 alt="${review.reviewer_name}" 
                                 class="reviewer-image">
                             <div class="reviewer-details">

@@ -1,5 +1,4 @@
 <?php
-// breadcrumb.php - A reusable breadcrumb navigation component
 
 // Function to generate breadcrumb HTML
 function generate_breadcrumbs($items) {

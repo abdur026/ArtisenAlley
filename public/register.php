@@ -13,10 +13,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    
+    // Handle profile image upload
+    $profile_image = 'default-avatar.jpg'; // Default image
+    
+    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === 0) {
+        $uploadDir = '../uploads/';
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        $filename = basename($_FILES['profile_image']['name']);
+        $targetFile = $uploadDir . $filename;
+        if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $targetFile)) {
+            $profile_image = $filename;
+        } else {
+            $_SESSION['error'] = "Failed to upload profile image.";
+            header("Location: register.php");
+            exit;
+        }
+    }
 
     require_once '../config/db.php';
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $name, $email, $hashedPassword);
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, profile_image) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $name, $email, $hashedPassword, $profile_image);
 
     if ($stmt->execute()) {
         $_SESSION['success'] = "Registration successful! Please log in.";
@@ -260,6 +279,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .strength-weak { width: 33.33%; background: #e74c3c; }
         .strength-medium { width: 66.66%; background: #f1c40f; }
         .strength-strong { width: 100%; background: #2ecc71; }
+
+        .image-upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .profile-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e0e0e0;
+        }
+        
+        .custom-file-upload {
+            display: inline-block;
+            padding: 8px 16px;
+            cursor: pointer;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .custom-file-upload:hover {
+            background-color: #e0e0e0;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
     </style>
     <script src="../src/main.js" defer></script>
 </head>
@@ -281,7 +333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         ?>
 
-        <form action="register.php" method="POST" onsubmit="return validateRegistrationForm();">
+        <form action="register.php" method="POST" enctype="multipart/form-data" onsubmit="return validateRegistrationForm();">
             <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your full name">
@@ -292,6 +344,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">
                 <i class="fas fa-envelope"></i>
+            </div>
+            
+            <div class="form-group">
+                <label for="profile_image">Profile Picture</label>
+                <div class="image-upload-container">
+                    <img id="profile-preview" src="/assets/images/default-avatar.png" alt="Profile Preview" class="profile-preview">
+                    <label class="custom-file-upload">
+                        <input type="file" id="profile_image" name="profile_image" accept="image/*" onchange="previewImage(this)">
+                        <i class="fas fa-upload"></i> Choose Profile Image
+                    </label>
+                </div>
             </div>
 
             <div class="form-group">
@@ -338,6 +401,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 strengthBar.classList.add('strength-medium');
             } else if (strength >= 1) {
                 strengthBar.classList.add('strength-weak');
+            }
+        }
+        
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-preview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
             }
         }
     </script>
