@@ -1,5 +1,9 @@
 <?php
-session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once '../config/db.php';
 require_once '../includes/breadcrumb.php';
 require_once '../config/paths.php';
