@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Artisan Alley</title>
-    <link rel="stylesheet" href="<?php echo url('/src/main.css'); ?>">
+    <link rel="stylesheet" href="<?php echo asset_url('src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -262,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .strength-medium { width: 66.66%; background: #f1c40f; }
         .strength-strong { width: 100%; background: #2ecc71; }
     </style>
-    <script src="<?php echo url('/src/main.js'); ?>" defer></script>
+    <script src="<?php echo asset_url('src/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="register-container">

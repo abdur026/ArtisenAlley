@@ -1,6 +1,26 @@
 <?php
+// Enable full error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 require_once '../config/paths.php';
+
+// Debug paths
+if (isset($_GET['debug_paths']) || true) {
+    echo "<pre style='background:#f5f5f5;padding:10px;border:1px solid #ccc;'>";
+    echo "===== LOGIN PAGE DEBUG INFO =====\n";
+    echo "Server Name: " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? '') . "\n";
+    echo "Request URI: " . htmlspecialchars($_SERVER['REQUEST_URI'] ?? '') . "\n";
+    echo "Script Name: " . htmlspecialchars($_SERVER['SCRIPT_NAME'] ?? '') . "\n";
+    echo "Is UBCO Server: " . (strpos($_SERVER['SERVER_NAME'] ?? '', 'cosc360.ok.ubc.ca') !== false ? 'Yes' : 'No') . "\n";
+    echo "BASE_URL: " . (defined('BASE_URL') ? BASE_URL : 'Not defined') . "\n";
+    echo "SITE_ROOT: " . (defined('SITE_ROOT') ? SITE_ROOT : 'Not defined') . "\n";
+    echo "============================\n";
+    echo "</pre>";
+}
+
+// Now require the database connection
 require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -45,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Artisan Alley</title>
-    <link rel="stylesheet" href="<?php echo asset_url('public/assets/css/main.css'); ?>">
+    <link rel="stylesheet" href="<?php echo asset_url('src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -248,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     </style>
-    <script src="<?php echo asset_url('public/assets/js/main.js'); ?>" defer></script>
+    <script src="<?php echo asset_url('src/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="login-container">
