@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once '../config/db.php';
 require_once '../config/paths.php';
+require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Artisan Alley</title>
-    <link rel="stylesheet" href="<?php echo url('/src/main.css'); ?>">
+    <link rel="stylesheet" href="<?php echo asset_url('public/assets/css/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -201,24 +201,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 500;
             display: flex;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            gap: 10px;
+            animation: slideIn 0.5s ease;
         }
 
         .alert i {
-            margin-right: 0.8rem;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
 
         .alert-error {
-            background-color: #fdedee;
-            color: #e74c3c;
-            border-left: 4px solid #e74c3c;
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #b91c1c;
+        }
+
+        .alert-error i {
+            color: #ef4444;
         }
 
         .alert-success {
-            background-color: #eef7ee;
-            color: #27ae60;
-            border-left: 4px solid #27ae60;
+            background-color: #dcfce7;
+            border-left: 4px solid #22c55e;
+            color: #15803d;
+        }
+
+        .alert-success i {
+            color: #22c55e;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         @media (max-width: 600px) {
@@ -226,55 +245,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 margin: 1rem;
                 padding: 1.5rem;
                 width: calc(100% - 2rem);
-                max-width: none;
-            }
-
-            .login-header h1 {
-                font-size: 2rem;
-            }
-
-            .form-group input {
-                font-size: 16px; 
             }
         }
     </style>
+    <script src="<?php echo asset_url('public/assets/js/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
             <h1>Welcome Back</h1>
-            <p>Sign in to continue your artisan journey</p>
+            <p>Please enter your credentials to access your account</p>
         </div>
 
-        <?php
-        if (isset($_SESSION['error'])) {
-            echo "<div class='alert alert-error'><i class='fas fa-exclamation-circle'></i> " . $_SESSION['error'] . "</div>";
-            unset($_SESSION['error']);
-        }
-        if (isset($_SESSION['success'])) {
-            echo "<div class='alert alert-success'><i class='fas fa-check-circle'></i> " . $_SESSION['success'] . "</div>";
-            unset($_SESSION['success']);
-        }
-        ?>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($_SESSION['error']); ?>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
 
-        <form action="<?php echo url('/login.php'); ?>" method="POST">
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <?php echo htmlspecialchars($_SESSION['success']); ?>
+            </div>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+
+        <form action="<?php echo url('/login.php'); ?>" method="post">
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email">
                 <i class="fas fa-envelope"></i>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
             </div>
-
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
                 <i class="fas fa-lock"></i>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
-
-            <button type="submit" class="login-btn">Sign In</button>
+            <button type="submit" class="login-btn">Login</button>
         </form>
-
         <div class="register-link">
-            <p>Don't have an account? <a href="<?php echo url('/register.php'); ?>">Create one here</a></p>
+            Don't have an account? <a href="<?php echo url('/register.php'); ?>">Register</a>
         </div>
     </div>
 </body>
