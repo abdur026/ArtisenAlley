@@ -1,11 +1,16 @@
 <?php 
-include __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/paths.php';
-
 // Enable error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+// First include paths.php since other files depend on it
+require_once __DIR__ . '/../config/paths.php';
+
+// Then include db.php for database connection
+require_once __DIR__ . '/../config/db.php';
+
+// Finally include header (which also uses paths.php)
+include __DIR__ . '/../includes/header.php';
 
 // Debug database connection
 if ($conn->connect_error) {
