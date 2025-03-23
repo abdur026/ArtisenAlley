@@ -1,7 +1,11 @@
 <?php
 session_start();
-require_once '../config/db.php';
-require_once '../includes/breadcrumb.php';
+require_once __DIR__ . '/../config/paths.php';
+require_once __DIR__ . '/../config/db.php';
+
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $category = isset($_GET['category']) ? $_GET['category'] : '';
@@ -55,7 +59,7 @@ while ($row = $featuredResult->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore Artisan Treasures - Artisan Alley</title>
-    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="<?php echo url('/assets/css/main.css'); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -83,7 +87,7 @@ while ($row = $featuredResult->fetch_assoc()) {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('/assets/images/pattern.png') repeat;
+            background: url('<?php echo url('/assets/images/pattern.png'); ?>') repeat;
             opacity: 0.1;
         }
 
@@ -199,7 +203,6 @@ while ($row = $featuredResult->fetch_assoc()) {
         .category-icon {
             font-size: 2.5rem;
             margin-bottom: 1rem;
-            color: var(--primary-color);
         }
 
         .category-name {
@@ -385,18 +388,16 @@ while ($row = $featuredResult->fetch_assoc()) {
     </style>
 </head>
 <body>
-    <header>
-        <h1>Search Results</h1>
-    </header>
+    <?php include __DIR__ . '/../includes/header.php'; ?>
 
     <?php
     // Generate breadcrumbs
     $breadcrumbs = [
-        ['name' => 'Home', 'url' => 'index.php']
+        ['name' => 'Home', 'url' => url('/index.php')]
     ];
     
-    if (!empty($search_query)) {
-        $breadcrumbs[] = ['name' => 'Search Results: "' . htmlspecialchars($search_query) . '"'];
+    if (!empty($keyword)) {
+        $breadcrumbs[] = ['name' => 'Search Results: "' . htmlspecialchars($keyword) . '"'];
     } elseif (!empty($category)) {
         $breadcrumbs[] = ['name' => 'Category: ' . htmlspecialchars($category)];
     } else {
@@ -411,15 +412,13 @@ while ($row = $featuredResult->fetch_assoc()) {
             <h1>Explore Handcrafted Treasures</h1>
             <p>Discover unique artisan products made with passion and skill</p>
             
-            <form action="search.php" method="GET" class="search-form">
+            <form class="search-form" action="<?php echo url('/search.php'); ?>" method="GET">
                 <div class="search-input-group">
-                    <input type="text" name="keyword" placeholder="Search for handcrafted items..." value="<?php echo htmlspecialchars($keyword); ?>">
+                    <input type="text" name="keyword" placeholder="Search for handmade treasures..." value="<?php echo htmlspecialchars($keyword); ?>">
                     <select name="category">
                         <option value="">All Categories</option>
                         <?php foreach ($categories as $cat): ?>
-                            <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo $category === $cat ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($cat); ?>
-                            </option>
+                        <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo ($category === $cat) ? 'selected' : ''; ?>><?php echo htmlspecialchars($cat); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <button type="submit"><i class="fas fa-search"></i> Search</button>
@@ -428,108 +427,125 @@ while ($row = $featuredResult->fetch_assoc()) {
         </div>
 
         <?php if (empty($keyword) && empty($category)): ?>
-            <!-- Featured Products Section -->
-            <section class="featured-section">
-                <h2 class="section-title"><i class="fas fa-star"></i> Featured Products</h2>
-                <div class="featured-products">
-                    <?php foreach ($featuredProducts as $product): ?>
-                        <div class="product-card">
-                            <div class="product-image">
-                                <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
-                                     alt="<?php echo htmlspecialchars($product['name']); ?>"
-                                     onerror="this.src='assets/images/placeholder.jpg'">
-                            </div>
-                            <div class="product-info">
-                                <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                                <p class="product-category"><?php echo htmlspecialchars($product['category']); ?></p>
-                                <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
-                                <div class="product-actions">
-                                    <a href="product.php?id=<?php echo $product['id']; ?>" class="view-btn">View Details</a>
-                                    <form action="add_to_cart.php" method="POST" class="add-to-cart-form">
-                                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                        <input type="hidden" name="quantity" value="1">
-                                        <button type="submit" class="add-to-cart-btn"><i class="fas fa-shopping-cart"></i></button>
-                                    </form>
-                                </div>
-                            </div>
+        <div class="featured-section">
+            <h2 class="section-title"><i class="fas fa-star"></i> Featured Products</h2>
+            <div class="featured-products">
+                <?php foreach ($featuredProducts as $product): ?>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="<?php echo url('/assets/images/' . htmlspecialchars($product['image'])); ?>" 
+                             alt="<?php echo htmlspecialchars($product['name']); ?>"
+                             onerror="this.src='<?php echo url('/assets/images/placeholder.jpg'); ?>'">
+                    </div>
+                    <div class="product-info">
+                        <h3><?php echo htmlspecialchars($product['name']); ?></h3>
+                        <p class="product-category"><?php echo htmlspecialchars($product['category']); ?></p>
+                        <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
+                        <div class="product-actions">
+                            <a href="<?php echo url('/product.php?id=' . $product['id']); ?>" class="view-btn">View Details</a>
+                            <form action="<?php echo url('/add_to_cart.php'); ?>" method="POST" class="add-to-cart-form">
+                                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="add-to-cart-btn"><i class="fas fa-shopping-cart"></i></button>
+                            </form>
                         </div>
-                    <?php endforeach; ?>
+                    </div>
                 </div>
-            </section>
+                <?php endforeach; ?>
+            </div>
+        </div>
 
-            <!-- Browse by Category Section -->
-            <section class="category-section">
-                <h2 class="section-title"><i class="fas fa-th-large"></i> Browse by Category</h2>
-                <div class="category-tiles">
-                    <?php 
-                    // Define category icons
-                    $categoryIcons = [
-                        'Home Decor' => 'fas fa-home',
-                        'Kitchen' => 'fas fa-utensils',
-                        'Bath & Body' => 'fas fa-bath',
-                        'Accessories' => 'fas fa-tshirt',
-                        'Stationery' => 'fas fa-pen',
-                        'Home Fragrance' => 'fas fa-air-freshener'
-                    ];
-                    
-                    foreach ($categories as $cat): 
-                        $icon = isset($categoryIcons[$cat]) ? $categoryIcons[$cat] : 'fas fa-tag';
-                    ?>
-                        <a href="search.php?category=<?php echo urlencode($cat); ?>" class="category-tile">
-                            <div class="category-icon"><i class="<?php echo $icon; ?>"></i></div>
-                            <div class="category-name"><?php echo htmlspecialchars($cat); ?></div>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </section>
+        <!-- Browse by Category Section -->
+        <section class="category-section">
+            <h2 class="section-title"><i class="fas fa-th-large"></i> Browse by Category</h2>
+            <div class="category-tiles">
+                <?php 
+                // Define category icons
+                $categoryIcons = [
+                    'Home Decor' => 'fas fa-home',
+                    'Kitchen' => 'fas fa-utensils',
+                    'Bath & Body' => 'fas fa-bath',
+                    'Accessories' => 'fas fa-tshirt',
+                    'Stationery' => 'fas fa-pen',
+                    'Home Fragrance' => 'fas fa-air-freshener'
+                ];
+                
+                foreach ($categories as $cat): 
+                    $icon = isset($categoryIcons[$cat]) ? $categoryIcons[$cat] : 'fas fa-tag';
+                ?>
+                    <a href="<?php echo url('/search.php?category=' . urlencode($cat)); ?>" class="category-tile">
+                        <div class="category-icon"><i class="<?php echo $icon; ?>"></i></div>
+                        <div class="category-name"><?php echo htmlspecialchars($cat); ?></div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
         <?php endif; ?>
 
         <div class="search-results">
             <div class="results-header">
                 <h2><?php echo count($products); ?> Results <?php echo !empty($keyword) ? 'for "' . htmlspecialchars($keyword) . '"' : ''; ?></h2>
                 <?php if (!empty($category)): ?>
-                    <div class="active-filter">
-                        <span>Category: <?php echo htmlspecialchars($category); ?></span>
-                        <a href="search.php?keyword=<?php echo urlencode($keyword); ?>" class="remove-filter"><i class="fas fa-times"></i></a>
-                    </div>
+                <div class="active-filter">
+                    <span>Category: <?php echo htmlspecialchars($category); ?></span>
+                    <a href="<?php echo url('/search.php?keyword=' . urlencode($keyword)); ?>" class="remove-filter"><i class="fas fa-times"></i></a>
+                </div>
                 <?php endif; ?>
             </div>
 
             <?php if (empty($products)): ?>
-                <div class="no-results">
-                    <i class="fas fa-search"></i>
-                    <h3>No products found</h3>
-                    <p>Try adjusting your search or browse all our categories</p>
-                </div>
+            <div class="no-results">
+                <i class="fas fa-search"></i>
+                <h3>No products found</h3>
+                <p>Try adjusting your search or browse all our categories</p>
+            </div>
             <?php else: ?>
-                <div class="product-grid">
-                    <?php foreach ($products as $product): ?>
-                        <div class="product-card">
-                            <div class="product-image">
-                                <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
-                                     alt="<?php echo htmlspecialchars($product['name']); ?>"
-                                     onerror="this.src='assets/images/placeholder.jpg'">
-                            </div>
-                            <div class="product-info">
-                                <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                                <p class="product-category"><?php echo htmlspecialchars($product['category']); ?></p>
-                                <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
-                                <div class="product-actions">
-                                    <a href="product.php?id=<?php echo $product['id']; ?>" class="view-btn">View Details</a>
-                                    <form action="add_to_cart.php" method="POST" class="add-to-cart-form">
-                                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                        <input type="hidden" name="quantity" value="1">
-                                        <button type="submit" class="add-to-cart-btn"><i class="fas fa-shopping-cart"></i></button>
-                                    </form>
-                                </div>
-                            </div>
+            <div class="product-grid">
+                <?php foreach ($products as $product): ?>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="<?php echo url('/assets/images/' . htmlspecialchars($product['image'])); ?>" 
+                             alt="<?php echo htmlspecialchars($product['name']); ?>"
+                             onerror="this.src='<?php echo url('/assets/images/placeholder.jpg'); ?>'">
+                    </div>
+                    <div class="product-info">
+                        <h3><?php echo htmlspecialchars($product['name']); ?></h3>
+                        <p class="product-category"><?php echo htmlspecialchars($product['category']); ?></p>
+                        <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
+                        <div class="product-actions">
+                            <a href="<?php echo url('/product.php?id=' . $product['id']); ?>" class="view-btn">View Details</a>
+                            <form action="<?php echo url('/add_to_cart.php'); ?>" method="POST" class="add-to-cart-form">
+                                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="add-to-cart-btn"><i class="fas fa-shopping-cart"></i></button>
+                            </form>
                         </div>
-                    <?php endforeach; ?>
+                    </div>
                 </div>
+                <?php endforeach; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <?php include '../includes/footer.php'; ?>
+    <?php include __DIR__ . '/../includes/footer.php'; ?>
+    
+    <?php
+    // Helper function to get category icon
+    function getCategoryIcon($category) {
+        $icons = [
+            'Jewelry' => 'fas fa-gem',
+            'Pottery' => 'fas fa-paint-brush',
+            'Textiles' => 'fas fa-tshirt',
+            'Woodwork' => 'fas fa-tree',
+            'Artwork' => 'fas fa-palette',
+            'Home Decor' => 'fas fa-home',
+            'Accessories' => 'fas fa-hat-wizard',
+            'Stationery' => 'fas fa-pen-fancy'
+        ];
+        
+        return $icons[$category] ?? 'fas fa-tags';
+    }
+    ?>
 </body>
 </html>
