@@ -51,7 +51,7 @@ try {
         }
     }
 } catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
+    $error = "Error: " . $e->getMessage();
     // Log the error
     error_log("Profile error: " . $e->getMessage());
 }
@@ -245,9 +245,13 @@ try {
 
     <div class="profile-container">
         <div class="profile-header">
-            <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" alt="Profile Picture" class="profile-avatar">
-            <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
-            <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
+            <?php if (isset($user) && $user): ?>
+                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" alt="Profile Picture" class="profile-avatar">
+                <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
+                <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
+            <?php else: ?>
+                <p class="error">User information could not be retrieved.</p>
+            <?php endif; ?>
         </div>
 
         <div class="profile-content">
@@ -291,37 +295,41 @@ try {
 
                 <section id="profile-info">
                     <h2 class="section-title">Profile Information</h2>
-                    <form action="<?php echo url('update_profile.php'); ?>" method="POST" enctype="multipart/form-data">
-                        <div class="image-upload">
-                            <?php if ($profile_image_data): ?>
-                                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
-                                     alt="Current Profile Picture" 
-                                     class="current-image">
-                            <?php else: ?>
-                                <img src="<?php echo asset_url('assets/images/default-avatar.png'); ?>" 
-                                     alt="Current Profile Picture" 
-                                     class="current-image">
-                            <?php endif; ?>
-                            <input type="file" name="profile_image" id="profile_image">
-                        </div>
+                    <?php if (isset($user) && $user): ?>
+                        <form action="<?php echo url('update_profile.php'); ?>" method="POST" enctype="multipart/form-data">
+                            <div class="image-upload">
+                                <?php if ($profile_image_data): ?>
+                                    <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
+                                         alt="Current Profile Picture" 
+                                         class="current-image">
+                                <?php else: ?>
+                                    <img src="<?php echo asset_url('assets/images/default-avatar.png'); ?>" 
+                                         alt="Current Profile Picture" 
+                                         class="current-image">
+                                <?php endif; ?>
+                                <input type="file" name="profile_image" id="profile_image">
+                            </div>
 
-                        <div class="form-group">
-                            <label for="first_name">First Name</label>
-                            <input type="text" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
-                        </div>
+                            <div class="form-group">
+                                <label for="first_name">First Name</label>
+                                <input type="text" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="last_name">Last Name</label>
-                            <input type="text" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
-                        </div>
+                            <div class="form-group">
+                                <label for="last_name">Last Name</label>
+                                <input type="text" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
-                        </div>
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
+                            </div>
 
-                        <button type="submit" class="btn btn-primary">Update Profile</button>
-                    </form>
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </form>
+                    <?php else: ?>
+                        <p>User information could not be retrieved.</p>
+                    <?php endif; ?>
                 </section>
 
                 <section id="my-reviews" class="profile-section">
