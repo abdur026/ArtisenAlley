@@ -1,17 +1,16 @@
 <?php
 session_start();
-require_once '../config/db.php';
-require_once '../includes/breadcrumb.php';
-
+require_once __DIR__ . '/../config/paths.php';
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/breadcrumb.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: " . url('/login.php'));
     exit;
 }
 
-
 $user_id = $_SESSION['user_id'];
-$stmt = $conn->prepare("SELECT name, email, profile_image FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT username, first_name, last_name, email, profile_image FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -21,11 +20,14 @@ if (!$user) {
     exit;
 }
 
+// Combine first and last name for display
+$user['name'] = $user['first_name'] . ' ' . $user['last_name'];
+
 if (!$user['profile_image']) {
     $user['profile_image'] = 'default-avatar.jpg';
     $profile_image_data = null;
 } else {
-    $image_path = "../uploads/" . $user['profile_image'];
+    $image_path = __DIR__ . "/../uploads/" . $user['profile_image'];
     if (file_exists($image_path)) {
         $profile_image_data = base64_encode(file_get_contents($image_path));
     } else {
@@ -39,7 +41,7 @@ if (!$user['profile_image']) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Profile - Artisan Alley</title>
-    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -398,13 +400,13 @@ if (!$user['profile_image']) {
     </style>
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include __DIR__ . '/../includes/header.php'; ?>
 
     <div class="profile-container">
         <?php
         // Generate breadcrumbs
         $breadcrumbs = [
-            ['name' => 'Home', 'url' => 'index.php'],
+            ['name' => 'Home', 'url' => url('index.php')],
             ['name' => 'Profile']
         ];
         echo generate_breadcrumbs($breadcrumbs);
@@ -415,7 +417,7 @@ if (!$user['profile_image']) {
                      alt="Profile Picture" 
                      class="profile-avatar">
             <?php else: ?>
-                <img src="/assets/images/default-avatar.png" 
+                <img src="<?php echo asset_url('assets/images/default-avatar.png'); ?>" 
                      alt="Profile Picture" 
                      class="profile-avatar">
             <?php endif; ?>
@@ -433,19 +435,19 @@ if (!$user['profile_image']) {
                         </a>
                     </li>
                     <li>
-                        <a href="orders.php">
+                        <a href="<?php echo url('orders.php'); ?>">
                             <i class="fas fa-shopping-bag"></i>
                             My Orders
                         </a>
                     </li>
                     <li>
-                        <a href="wishlist.php">
+                        <a href="<?php echo url('wishlist.php'); ?>">
                             <i class="fas fa-heart"></i>
                             Wishlist
                         </a>
                     </li>
                     <li>
-                        <a href="reviews.php">
+                        <a href="<?php echo url('reviews.php'); ?>">
                             <i class="fas fa-star"></i>
                             Community Reviews
                         </a>
@@ -457,7 +459,7 @@ if (!$user['profile_image']) {
                         </a>
                     </li>
                     <li>
-                        <a href="settings.php">
+                        <a href="<?php echo url('settings.php'); ?>">
                             <i class="fas fa-cog"></i>
                             Settings
                         </a>
@@ -482,14 +484,14 @@ if (!$user['profile_image']) {
 
                 <section id="profile-info">
                     <h2 class="section-title">Profile Information</h2>
-                    <form action="update_profile.php" method="POST" enctype="multipart/form-data">
+                    <form action="<?php echo url('update_profile.php'); ?>" method="POST" enctype="multipart/form-data">
                         <div class="image-upload">
                             <?php if ($profile_image_data): ?>
                                 <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
                                      alt="Current Profile Picture" 
                                      class="current-image">
                             <?php else: ?>
-                                <img src="/assets/images/default-avatar.png" 
+                                <img src="<?php echo asset_url('assets/images/default-avatar.png'); ?>" 
                                      alt="Current Profile Picture" 
                                      class="current-image">
                             <?php endif; ?>
@@ -501,8 +503,13 @@ if (!$user['profile_image']) {
                         </div>
 
                         <div class="form-group">
-                            <label for="name">Full Name</label>
-                            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" required>
+                            <label for="first_name">First Name</label>
+                            <input type="text" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="last_name">Last Name</label>
+                            <input type="text" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
                         </div>
 
                         <div class="form-group">
@@ -520,7 +527,7 @@ if (!$user['profile_image']) {
                 <section id="my-reviews" class="profile-section">
                     <h2 class="section-title">
                         My Reviews
-                        <a href="reviews.php" class="view-all-reviews">View All Community Reviews</a>
+                        <a href="<?php echo url('reviews.php'); ?>" class="view-all-reviews">View All Community Reviews</a>
                     </h2>
                     <div class="reviews-grid">
                         <?php
@@ -539,10 +546,10 @@ if (!$user['profile_image']) {
                         ?>
                             <div class="review-card">
                                 <div class="review-product">
-                                    <img src="assets/images/<?php echo htmlspecialchars($review['product_image']); ?>" 
+                                    <img src="<?php echo asset_url('assets/images/' . htmlspecialchars($review['product_image'])); ?>" 
                                          alt="<?php echo htmlspecialchars($review['product_name']); ?>"
                                          class="product-image"
-                                         onerror="this.src='assets/images/placeholder.jpg'">
+                                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
                                     <div class="product-info">
                                         <h3><?php echo htmlspecialchars($review['product_name']); ?></h3>
                                         <div class="rating">
@@ -558,7 +565,7 @@ if (!$user['profile_image']) {
                                         <i class="fas fa-calendar"></i>
                                         <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
                                     </span>
-                                    <a href="product.php?id=<?php echo $review['product_id']; ?>" class="view-product">
+                                    <a href="<?php echo url('product.php?id=' . $review['product_id']); ?>" class="view-product">
                                         View Product <i class="fas fa-arrow-right"></i>
                                     </a>
                                 </div>
@@ -570,7 +577,7 @@ if (!$user['profile_image']) {
                             <div class="no-reviews">
                                 <i class="fas fa-comment-alt"></i>
                                 <p>You haven't written any reviews yet.</p>
-                                <a href="index.php" class="browse-products">Browse Products</a>
+                                <a href="<?php echo url('index.php'); ?>" class="browse-products">Browse Products</a>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -579,7 +586,7 @@ if (!$user['profile_image']) {
         </div>
     </div>
 
-    <?php include '../includes/footer.php'; ?>
+    <?php include __DIR__ . '/../includes/footer.php'; ?>
 
     <script>
         document.getElementById('profile_image').addEventListener('change', function(e) {
