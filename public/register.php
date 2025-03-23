@@ -1,6 +1,8 @@
 <?php
 session_start();
-require_once '../config/paths.php';
+require_once __DIR__ . '/../config/paths.php';
+
+$registration_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
@@ -15,18 +17,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    require_once '../config/db.php';
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $name, $email, $hashedPassword);
-
-    if ($stmt->execute()) {
-        $_SESSION['success'] = "Registration successful! Please log in.";
-        header("Location: " . url('/login.php'));
-    } else {
-        $_SESSION['error'] = "Error: " . $stmt->error;
-        header("Location: " . url('/register.php'));
+    try {
+        require_once __DIR__ . '/../config/db.php';
+        
+        if($conn->connect_error) {
+            throw new Exception("Database connection failed: " . $conn->connect_error);
+        }
+        
+        $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $name, $email, $hashedPassword);
+        
+        if ($stmt->execute()) {
+            $_SESSION['success'] = "Registration successful! You can now log in.";
+            header("Location: " . url('/login.php'));
+            exit;
+        } else {
+            throw new Exception($stmt->error);
+        }
+    } catch (Exception $e) {
+        $registration_error = "Registration failed: " . $e->getMessage();
+        // Log the error
+        error_log("Registration error: " . $e->getMessage());
     }
-    exit;
 }
 ?>
 
@@ -36,8 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Artisan Alley</title>
-    <link rel="stylesheet" href="<?php echo asset_url('src/main.css'); ?>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             min-height: 100vh;
@@ -46,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             justify-content: center;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         .register-container {
@@ -262,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .strength-medium { width: 66.66%; background: #f1c40f; }
         .strength-strong { width: 100%; background: #2ecc71; }
     </style>
-    <script src="<?php echo asset_url('src/main.js'); ?>" defer></script>
+    <script src="<?php echo asset_url('assets/js/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="register-container">
@@ -279,6 +291,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_SESSION['success'])) {
             echo "<div class='alert alert-success'><i class='fas fa-check-circle'></i> " . $_SESSION['success'] . "</div>";
             unset($_SESSION['success']);
+        }
+        if ($registration_error) {
+            echo "<div class='alert alert-error'><i class='fas fa-exclamation-circle'></i> $registration_error</div>";
         }
         ?>
 

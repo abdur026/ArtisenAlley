@@ -1,8 +1,7 @@
 <?php 
 include __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../config/paths.php';
 
-// Enable error reporting
+// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
