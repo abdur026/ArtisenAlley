@@ -13,10 +13,6 @@ $is_ubco_server = (strpos($server_name, 'cosc360.ok.ubc.ca') !== false);
 if ($is_ubco_server) {
     // UBCO server base path - ABSOLUTE path including domain prefix
     define('BASE_URL', '/qrehman/ArtisenAlley/public');
-    
-    // Enable full error reporting on the server for debugging
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
 } else {
     // Local development environment
     define('BASE_URL', '');
@@ -51,7 +47,7 @@ function url($path) {
     
     // For empty paths, just return the base URL
     if (empty($path)) {
-        return BASE_URL ?: '/';
+        return BASE_URL;
     }
     
     // This ensures we always have a single slash between base URL and path
