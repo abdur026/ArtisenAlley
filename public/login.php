@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT id, password, username, first_name, last_name, is_admin FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -42,9 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name']; 
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['is_admin'] = $user['is_admin'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_role'] = $user['role'];
             header("Location: " . url('/index.php'));
             exit;
         } else {
@@ -53,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } else {
-        $_SESSION['error'] = "Email not found.";
+        $_SESSION['error'] = "User not found.";
         header("Location: " . url('/login.php'));
         exit;
     }
@@ -66,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Artisan Alley</title>
-    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
+    <link rel="stylesheet" href="<?php echo asset_url('src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -269,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     </style>
-    <script src="<?php echo asset_url('assets/js/main.js'); ?>" defer></script>
+    <script src="<?php echo asset_url('src/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="login-container">
