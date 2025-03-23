@@ -47,10 +47,10 @@ $categories_result = $conn->query($categories_query);
                     while($product = $products_result->fetch_assoc()): 
                 ?>
                 <div class="product-card">
-                    <img src="<?php echo url('/assets/images/' . htmlspecialchars($product['image'] ?? '')); ?>" 
+                    <img src="<?php echo asset_url('public/assets/images/' . htmlspecialchars($product['image'] ?? '')); ?>" 
                          alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>" 
                          class="product-image"
-                         onerror="this.src='<?php echo url('/assets/images/placeholder.jpg'); ?>'">
+                         onerror="this.src='<?php echo asset_url('public/assets/images/placeholder.jpg'); ?>'">
                     <div class="product-info">
                         <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
@@ -75,10 +75,10 @@ $categories_result = $conn->query($categories_query);
             <div class="categories-grid">
                 <?php while($category = $categories_result->fetch_assoc()): ?>
                 <div class="category-card">
-                    <img src="<?php echo url('/assets/images/categories/' . strtolower(str_replace(' ', '-', $category['category'])) . '.jpg'); ?>" 
+                    <img src="<?php echo asset_url('public/assets/images/categories/' . strtolower(str_replace(' ', '-', $category['category'])) . '.jpg'); ?>" 
                          alt="<?php echo htmlspecialchars($category['category']); ?>" 
                          class="category-image"
-                         onerror="this.src='<?php echo url('/assets/images/placeholder.jpg'); ?>'">
+                         onerror="this.src='<?php echo asset_url('public/assets/images/placeholder.jpg'); ?>'">
                     <div class="category-overlay">
                         <h3><?php echo htmlspecialchars($category['category']); ?></h3>
                     </div>

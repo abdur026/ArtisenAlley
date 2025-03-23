@@ -13,9 +13,12 @@ $is_ubco_server = (strpos($server_name, 'cosc360.ok.ubc.ca') !== false);
 if ($is_ubco_server) {
     // UBCO server base path - ABSOLUTE path including domain prefix
     define('BASE_URL', '/qrehman/ArtisenAlley/public');
+    // Define the site root for assets
+    define('SITE_ROOT', '/qrehman/ArtisenAlley');
 } else {
     // Local development environment
     define('BASE_URL', '');
+    define('SITE_ROOT', '');
 }
 
 // Get dirname of the current script for context awareness
@@ -31,6 +34,7 @@ if (isset($_GET['debug_paths'])) {
     echo "Script Dir: " . htmlspecialchars($script_dir) . "\n";
     echo "Is UBCO Server: " . ($is_ubco_server ? 'Yes' : 'No') . "\n";
     echo "BASE_URL: " . BASE_URL . "\n";
+    echo "SITE_ROOT: " . SITE_ROOT . "\n";
     echo "============================\n";
     echo "</pre>";
 }
@@ -47,7 +51,7 @@ function url($path) {
     
     // For empty paths, just return the base URL
     if (empty($path)) {
-        return BASE_URL;
+        return BASE_URL ?: '/';
     }
     
     // This ensures we always have a single slash between base URL and path
@@ -56,6 +60,30 @@ function url($path) {
         return BASE_URL . '/' . $path;
     } else {
         // For local development, just prepend a slash
+        return '/' . $path;
+    }
+}
+
+/**
+ * Generate a complete asset URL that works on both local and server environments
+ * 
+ * @param string $path The relative path to the asset
+ * @return string The complete URL to the asset
+ */
+function asset_url($path) {
+    // Remove leading slash if present
+    $path = ltrim($path, '/');
+    
+    // For empty paths, return the site root
+    if (empty($path)) {
+        return SITE_ROOT ?: '/';
+    }
+    
+    if (!empty(SITE_ROOT)) {
+        // For server environment with defined site root
+        return SITE_ROOT . '/' . $path;
+    } else {
+        // For local development
         return '/' . $path;
     }
 }
