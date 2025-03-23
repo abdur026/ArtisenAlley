@@ -71,6 +71,8 @@ function url($path) {
  * @return string The complete URL to the asset
  */
 function asset_url($path) {
+    global $is_ubco_server;
+    
     // Remove leading slash if present
     $path = ltrim($path, '/');
     
@@ -79,8 +81,12 @@ function asset_url($path) {
         return SITE_ROOT ?: '/';
     }
     
-    if (!empty(SITE_ROOT)) {
-        // For server environment with defined site root
+    if ($is_ubco_server) {
+        // For UBCO server, we need to return the full public path for assets
+        // The public directory contains the assets
+        return BASE_URL . '/' . $path;
+    } else if (!empty(SITE_ROOT)) {
+        // For other server environments with defined site root
         return SITE_ROOT . '/' . $path;
     } else {
         // For local development
