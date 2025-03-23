@@ -5,13 +5,26 @@
 $server_name = $_SERVER['SERVER_NAME'] ?? '';
 $is_ubco_server = (strpos($server_name, 'cosc360.ok.ubc.ca') !== false);
 
+// Get the request URI for debugging
+$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+
 // Set the base URL accordingly
 if ($is_ubco_server) {
-    // URL structure on UBCO server: /qrehman/ArtisenAlley/public/
-    define('BASE_URL', '/qrehman/ArtisenAlley/public');
+    // URL structure on UBCO server
+    define('BASE_URL', '/qrehman/ArtisenAlley');
 } else {
     // Localhost or other environment
     define('BASE_URL', '');
+}
+
+// Debug information (will be removed in production)
+if (isset($_GET['debug_paths'])) {
+    echo "<pre>";
+    echo "Server Name: " . htmlspecialchars($server_name) . "\n";
+    echo "Request URI: " . htmlspecialchars($request_uri) . "\n";
+    echo "Is UBCO Server: " . ($is_ubco_server ? 'Yes' : 'No') . "\n";
+    echo "BASE_URL: " . BASE_URL . "\n";
+    echo "</pre>";
 }
 
 // Helper function to generate correct URLs
