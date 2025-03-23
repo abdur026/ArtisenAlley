@@ -20,10 +20,10 @@ if (isset($_GET['debug_paths']) || true) {
     echo "</pre>";
 }
 
-// Now require the database connection
-require_once '../config/db.php';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Include database connection only when processing the form
+    require_once '../config/db.php';
+    
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
