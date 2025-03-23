@@ -5,11 +5,13 @@ require_once __DIR__ . '/../config/paths.php';
 $registration_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
+    $first_name = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_STRING);
+    $last_name = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
-    if (!$name || !$email || !$password) {
+    if (!$username || !$email || !$password || !$first_name || !$last_name) {
         $_SESSION['error'] = "All fields are required.";
         header("Location: " . url('/register.php'));
         exit;
@@ -24,8 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Database connection failed: " . $conn->connect_error);
         }
         
-        $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $name, $email, $hashedPassword);
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password, first_name, last_name) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssss", $username, $email, $hashedPassword, $first_name, $last_name);
         
         if ($stmt->execute()) {
             $_SESSION['success'] = "Registration successful! You can now log in.";
@@ -299,8 +301,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form action="<?php echo url('/register.php'); ?>" method="POST" onsubmit="return validateRegistrationForm();">
             <div class="form-group">
-                <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required placeholder="Enter your username">
+                <i class="fas fa-user"></i>
+            </div>
+
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" id="first_name" name="first_name" required placeholder="Enter your first name">
+                <i class="fas fa-user"></i>
+            </div>
+
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="last_name" required placeholder="Enter your last name">
                 <i class="fas fa-user"></i>
             </div>
 
