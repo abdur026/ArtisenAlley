@@ -11,7 +11,7 @@ $request_uri = $_SERVER['REQUEST_URI'] ?? '';
 // Set the base URL accordingly
 if ($is_ubco_server) {
     // URL structure on UBCO server
-    define('BASE_URL', '/qrehman/ArtisenAlley');
+    define('BASE_URL', '/qrehman/ArtisenAlley/public');
 } else {
     // Localhost or other environment
     define('BASE_URL', '');
@@ -33,6 +33,10 @@ function url($path) {
     $path = ltrim($path, '/');
     
     // Return the complete URL
-    return BASE_URL . '/' . $path;
+    if (!empty($path)) {
+        return BASE_URL . '/' . $path;
+    } else {
+        return BASE_URL;
+    }
 }
 ?>

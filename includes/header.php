@@ -30,8 +30,8 @@ require_once __DIR__ . "/../config/paths.php";
                             <li><a href="<?php echo url('/admin_dashboard.php'); ?>"><i class="fas fa-cog"></i> Admin</a></li>
                         <?php endif; ?>
                     <?php else: ?>
-                        <li><a href="<?php echo url('login.php'); ?>"><i class="fas fa-sign-in-alt"></i> Login</a></li>
-                        <li><a href="<?php echo url('register.php'); ?>"><i class="fas fa-user-plus"></i> Register</a></li>
+                        <li><a href="<?php echo url('/login.php'); ?>"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                        <li><a href="<?php echo url('/register.php'); ?>"><i class="fas fa-user-plus"></i> Register</a></li>
                     <?php endif; ?>
                 </ul>
             </nav>
