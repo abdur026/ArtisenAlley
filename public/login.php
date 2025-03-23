@@ -4,7 +4,15 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 session_start();
-require_once '../config/paths.php';
+require_once __DIR__ . '/../config/paths.php';
+
+// Redirect if already logged in
+if (isset($_SESSION['user_id'])) {
+    header("Location: " . url('/index.php'));
+    exit;
+}
+
+$login_error = '';
 
 // Debug paths - now only shows when debug_paths parameter is explicitly set
 if (isset($_GET['debug_paths'])) {
@@ -20,41 +28,48 @@ if (isset($_GET['debug_paths'])) {
     echo "</pre>";
 }
 
+// Process login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Include database connection only when processing the form
-    require_once '../config/db.php';
+    try {
+        require_once __DIR__ . '/../config/db.php';
+        
+        if($conn->connect_error) {
+            throw new Exception("Database connection failed: " . $conn->connect_error);
+        }
     
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-    $password = $_POST['password'];
+        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $password = $_POST['password'];
 
-    if (!$email || !$password) {
-        $_SESSION['error'] = "All fields are required.";
-        header("Location: " . url('/login.php'));
-        exit;
-    }
-
-    $stmt = $conn->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_role'] = $user['role'];
-            header("Location: " . url('/index.php'));
-            exit;
-        } else {
-            $_SESSION['error'] = "Incorrect password.";
+        if (!$email || !$password) {
+            $_SESSION['error'] = "All fields are required.";
             header("Location: " . url('/login.php'));
             exit;
         }
-    } else {
-        $_SESSION['error'] = "User not found.";
-        header("Location: " . url('/login.php'));
-        exit;
+
+        $stmt = $conn->prepare("SELECT id, password, username, first_name, last_name, is_admin FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+            if (password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
+                $_SESSION['is_admin'] = $user['is_admin'] ? true : false;
+                
+                header("Location: " . url('/index.php'));
+                exit;
+            } else {
+                throw new Exception("Password is incorrect");
+            }
+        } else {
+            throw new Exception("No user found with that email");
+        }
+    } catch (Exception $e) {
+        $login_error = "Login failed: " . $e->getMessage();
+        error_log("Login error: " . $e->getMessage());
     }
 }
 ?>
@@ -291,6 +306,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php echo htmlspecialchars($_SESSION['success']); ?>
             </div>
             <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+
+        <?php if ($login_error): ?>
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($login_error); ?>
+            </div>
         <?php endif; ?>
 
         <form action="<?php echo url('/login.php'); ?>" method="post">
