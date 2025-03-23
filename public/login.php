@@ -6,8 +6,8 @@ ini_set('display_errors', 1);
 session_start();
 require_once '../config/paths.php';
 
-// Debug paths
-if (isset($_GET['debug_paths']) || true) {
+// Debug paths - now only shows when debug_paths parameter is explicitly set
+if (isset($_GET['debug_paths'])) {
     echo "<pre style='background:#f5f5f5;padding:10px;border:1px solid #ccc;'>";
     echo "===== LOGIN PAGE DEBUG INFO =====\n";
     echo "Server Name: " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? '') . "\n";
