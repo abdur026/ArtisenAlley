@@ -17,7 +17,7 @@ $result = $conn->query($query);
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
 </head>
 <body>
     <header>
