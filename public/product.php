@@ -40,7 +40,7 @@ if (!$product) {
 }
 
 
-$stmtReviews = $conn->prepare("SELECT r.*, u.name as reviewer_name 
+$stmtReviews = $conn->prepare("SELECT r.*, CONCAT(u.first_name, ' ', u.last_name) as reviewer_name 
                               FROM reviews r 
                               JOIN users u ON r.user_id = u.id 
                               WHERE r.product_id = ? 
