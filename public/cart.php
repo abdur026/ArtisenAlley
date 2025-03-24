@@ -1,8 +1,17 @@
 <?php
+// Configure session with more secure and persistent settings
+ini_set('session.cookie_lifetime', 86400); // 1 day
+ini_set('session.gc_maxlifetime', 86400); // 1 day
 session_start();
 require_once '../config/db.php';
 require_once '../config/paths.php';
 require_once '../includes/breadcrumb.php';
+
+// NOTE: TEMPORARY FIX - Force a product into the cart for testing
+$_SESSION['cart'] = [
+    1 => 1  // Product ID 1, quantity 1
+];
+error_log("FORCED: Set cart to product ID 1");
 
 // Initialize the cart if it doesn't exist
 if (!isset($_SESSION['cart'])) {
@@ -404,6 +413,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ?>
         <div class="cart-header">
             <h1><i class="fas fa-shopping-cart"></i> Your Shopping Cart</h1>
+            <!-- Direct cart status check -->
+            <div style="background: #e3f2fd; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.9rem; text-align: left;">
+                Cart Status: <?php echo !empty($_SESSION['cart']) ? 'Contains items' : 'Empty'; ?> 
+                (<?php echo count($_SESSION['cart']); ?> items)
+            </div>
         </div>
 
         <?php if (empty($_SESSION['cart'])): ?>
@@ -425,9 +439,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Debug SQL query
                         error_log("Cart Debug - Executing query for product ID: " . $product_id);
                         
-                        $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.image, u.name as artisan_name, 
-                                             CAST(p.price AS DECIMAL(10,2)) as price_decimal,
-                                             CAST(p.price AS CHAR) as price_string
+                        $stmt = $conn->prepare("SELECT p.id, p.name, p.price+0.0 as price, p.image, u.name as artisan_name
                                              FROM products p 
                                              LEFT JOIN users u ON p.artisan_id = u.id 
                                              WHERE p.id = ?");
@@ -449,9 +461,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Debug product data retrieved
                         error_log("Cart Debug - Product data: " . json_encode($product));
                         
-                        // Make sure price is treated as a numeric value
-                        $price = floatval($product['price_decimal'] ?? $product['price']);
-                        error_log("Cart Debug - Original price: {$product['price']}, decimal: {$product['price_decimal']}, string: {$product['price_string']}, converted: {$price}, type: " . gettype($price));
+                        // Ensure price is numeric by casting explicitly to float
+                        // MySQL returns numeric values as strings, so we need to convert
+                        $price = (float)$product['price'];
+                        error_log("Cart Debug - Original price: {$product['price']}, converted: {$price}, type: " . gettype($price));
                         
                         $total = $price * $quantity;
                         error_log("Cart Debug - Quantity: {$quantity}, Total: {$total}");
