@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/paths.php';
 require_once '../includes/breadcrumb.php';
 
 // Initialize the cart if it doesn't exist
@@ -332,14 +333,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
+            <a href="<?php echo url('/index.php'); ?>">Home</a>
             <div>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
+                    <a href="<?php echo url('/profile.php'); ?>">Profile</a>
+                    <a href="<?php echo url('/logout.php'); ?>">Logout</a>
                 <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
+                    <a href="<?php echo url('/login.php'); ?>">Login</a>
+                    <a href="<?php echo url('/register.php'); ?>">Register</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -349,7 +350,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php
         // Generate breadcrumbs
         $breadcrumbs = [
-            ['name' => 'Home', 'url' => 'index.php'],
+            ['name' => 'Home', 'url' => url('/index.php')],
             ['name' => 'Shopping Cart']
         ];
         echo generate_breadcrumbs($breadcrumbs);
