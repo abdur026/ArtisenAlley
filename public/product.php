@@ -481,10 +481,12 @@ if (isset($_SESSION['debug'])) {
         ?>
         
         <div class="product-details">
-            <img src="<?php echo url('/assets/images/' . htmlspecialchars($product['image'])); ?>" 
-                 alt="<?php echo htmlspecialchars($product['name']); ?>"
-                 class="product-image"
-                 onerror="this.src='<?php echo url('/assets/images/placeholder.jpg'); ?>'">
+            <?php
+            $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
+            ?>
+            <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                 alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>"
+                 class="product-image">
             
             <div class="product-info">
                 <div class="product-category">
