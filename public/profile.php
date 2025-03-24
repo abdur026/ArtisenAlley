@@ -12,7 +12,12 @@ require_once __DIR__ . '/../config/paths.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/breadcrumb.php';
 
+// Debug session and connection
+error_log('Session data: ' . print_r($_SESSION, true));
+error_log('Database connection status: ' . ($conn->connect_error ? 'Failed: ' . $conn->connect_error : 'Connected'));
+
 if (!isset($_SESSION['user_id'])) {
+    error_log('No user_id in session');
     header("Location: " . url('/login.php'));
     exit;
 }
@@ -21,14 +26,32 @@ try {
     error_log("Attempting to fetch user profile for user_id: " . $_SESSION['user_id']);
     
     $user_id = $_SESSION['user_id'];
+    
+    // Test database connection
+    if ($conn->connect_error) {
+        throw new Exception("Database connection failed: " . $conn->connect_error);
+    }
+    
+    // Test if we can execute a simple query
+    $test_query = $conn->query("SELECT 1");
+    if (!$test_query) {
+        throw new Exception("Database connection test failed: " . $conn->error);
+    }
+    
+    // Prepare the statement with error checking
     $stmt = $conn->prepare("SELECT id, username, first_name, last_name, email, profile_image FROM users WHERE id = ?");
     if (!$stmt) {
         throw new Exception("Database prepare failed: " . $conn->error);
     }
     
-    $stmt->bind_param("i", $user_id);
+    // Bind parameter with error checking
+    if (!$stmt->bind_param("i", $user_id)) {
+        throw new Exception("Parameter binding failed: " . $stmt->error);
+    }
+    
+    // Execute with error checking
     if (!$stmt->execute()) {
-        throw new Exception("Database execute failed: " . $stmt->error);
+        throw new Exception("Query execution failed: " . $stmt->error);
     }
     
     $result = $stmt->get_result();
@@ -39,7 +62,7 @@ try {
     $user = $result->fetch_assoc();
     if (!$user) {
         error_log("No user found for ID: " . $user_id);
-        throw new Exception("User not found");
+        throw new Exception("User not found in database");
     }
 
     error_log("Successfully fetched user data: " . print_r($user, true));
