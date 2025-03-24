@@ -12,9 +12,9 @@ $is_ubco_server = (strpos($server_name, 'cosc360.ok.ubc.ca') !== false);
 // Set the base URL based on environment
 if ($is_ubco_server) {
     // UBCO server base path - ABSOLUTE path including domain prefix
-    define('BASE_URL', '/qrehman/ArtisenAlley/public');
+    define('BASE_URL', '/kaamir01/ArtisenAlley/public');
     // Define the site root for assets
-    define('SITE_ROOT', '/qrehman/ArtisenAlley');
+    define('SITE_ROOT', '/kaamir01/ArtisenAlley');
 } else {
     // Local development environment
     define('BASE_URL', '');

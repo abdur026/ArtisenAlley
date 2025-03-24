@@ -1,15 +1,18 @@
 # Enable rewrite engine
 RewriteEngine On
 
+# Set the base directory
+RewriteBase /kaamir01/ArtisenAlley/public/
+
 # Custom error pages
-ErrorDocument 404 /error.php?code=404
-ErrorDocument 403 /error.php?code=403
-ErrorDocument 500 /error.php?code=500
+ErrorDocument 404 /kaamir01/ArtisenAlley/public/error.php?code=404
+ErrorDocument 403 /kaamir01/ArtisenAlley/public/error.php?code=403
+ErrorDocument 500 /kaamir01/ArtisenAlley/public/error.php?code=500
 
 # Handle pages that don't exist
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /error.php?code=404 [L,QSA]
+RewriteRule ^(.*)$ /kaamir01/ArtisenAlley/public/error.php?code=404 [L,QSA]
 
 # Security headers
 <IfModule mod_headers.c>
