@@ -26,7 +26,7 @@ function calculateAverageRating($reviews) {
 
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-
+// Simple query without category join
 $stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->bind_param("i", $product_id);
 $stmt->execute();
@@ -42,7 +42,7 @@ if (!$product) {
 
 $stmtReviews = $conn->prepare("SELECT r.*, CONCAT(u.first_name, ' ', u.last_name) as reviewer_name 
                               FROM reviews r 
-                              JOIN users u ON r.user_id = u.id 
+                              LEFT JOIN users u ON r.user_id = u.id 
                               WHERE r.product_id = ? 
                               ORDER BY r.created_at DESC");
 $stmtReviews->bind_param("i", $product_id);
