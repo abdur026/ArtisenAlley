@@ -375,7 +375,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="cart-items">
                 <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
                     try {
-                        $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
+                        $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.image, u.name as artisan_name 
+                                              FROM products p 
+                                              LEFT JOIN users u ON p.artisan_id = u.id 
+                                              WHERE p.id = ?");
                         if (!$stmt) {
                             throw new Exception("Failed to prepare statement: " . $conn->error);
                         }
@@ -384,14 +387,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             throw new Exception("Failed to execute query: " . $stmt->error);
                         }
                         $result = $stmt->get_result();
+                        
+                        // Debug product data
+                        error_log("Cart Debug - Product ID: $product_id, Result rows: " . ($result ? $result->num_rows : 'null'));
+                        
                         if ($result && $result->num_rows > 0):
                         $product = $result->fetch_assoc();
+                        
+                        // Debug product data retrieved
+                        error_log("Cart Debug - Product data: " . json_encode($product));
+                        
                         $total = $product['price'] * $quantity;
                         $grandTotal += $total;
                 ?>
                     <div class="cart-item">
                         <?php
-                        $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
+                        $image_url = !empty($product['image']) ? (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/' . $product['image'] : (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/placeholder.jpg';
                         ?>
                         <img src="<?php echo htmlspecialchars($image_url); ?>" 
                              alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>">
@@ -418,6 +429,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </form>
                     </div>
                 <?php 
+                        else:
+                            // Product not found in database, display error message
+                            echo '<div class="cart-item" style="padding: 1rem; background-color: #ffebee; color: #c62828; border-left: 4px solid #c62828;">';
+                            echo '<i class="fas fa-exclamation-circle"></i> Product ID ' . $product_id . ' could not be found. ';
+                            echo '<form method="POST" action="cart.php" style="display: inline;">';
+                            echo '<input type="hidden" name="action" value="remove">';
+                            echo '<input type="hidden" name="product_id" value="' . $product_id . '">';
+                            echo '<button type="submit" style="background: none; border: none; color: #c62828; text-decoration: underline; cursor: pointer;">Remove from cart</button>';
+                            echo '</form>';
+                            echo '</div>';
                         endif;
                     } catch (Exception $e) {
                         error_log("Error in cart.php: " . $e->getMessage());
