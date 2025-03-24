@@ -413,50 +413,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ?>
         <div class="cart-header">
             <h1><i class="fas fa-shopping-cart"></i> Your Shopping Cart</h1>
-            <!-- Direct cart status check -->
-            <div style="background: #e3f2fd; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.9rem; text-align: left;">
-                Cart Status: <?php echo !empty($_SESSION['cart']) ? 'Contains items' : 'Empty'; ?> 
-                (<?php echo count($_SESSION['cart']); ?> items)
-            </div>
             
-            <!-- DEBUG OUTPUT: Display direct database query results -->
-            <div style="background: #fff3cd; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.9rem; text-align: left; border: 1px solid #ffeeba;">
-                <h3>DEBUG: Direct Query Test</h3>
-                <?php
-                // Direct query to verify product price
-                $debug_query = "SELECT id, name, price FROM products WHERE id = 1";
-                $debug_result = $conn->query($debug_query);
-                if ($debug_result && $debug_result->num_rows > 0) {
-                    $debug_product = $debug_result->fetch_assoc();
-                    echo "<p>Product ID: " . htmlspecialchars($debug_product['id']) . "</p>";
-                    echo "<p>Name: " . htmlspecialchars($debug_product['name']) . "</p>";
-                    echo "<p>Raw Price: " . htmlspecialchars($debug_product['price']) . "</p>";
-                    echo "<p>Data Type: " . gettype($debug_product['price']) . "</p>";
-                    echo "<p>Is Numeric: " . (is_numeric($debug_product['price']) ? 'Yes' : 'No') . "</p>";
-                    echo "<p>Parsed Float: $" . number_format((float)$debug_product['price'], 2) . "</p>";
-                    
-                    // Show actual database schema for the price column
-                    $schema_query = "SHOW COLUMNS FROM products LIKE 'price'";
-                    $schema_result = $conn->query($schema_query);
-                    if ($schema_result && $schema_result->num_rows > 0) {
-                        $column_info = $schema_result->fetch_assoc();
-                        echo "<p>Database Column Type: " . htmlspecialchars($column_info['Type']) . "</p>";
+            <?php if (!empty($_SESSION['cart'])): ?>
+                <div style="margin-top: 10px; color: #e8f4ff; font-size: 1.1rem;">
+                    <i class="fas fa-info-circle"></i> 
+                    You have <?php echo array_sum($_SESSION['cart']); ?> item(s) in your cart
+                </div>
+            <?php endif; ?>
+            
+            <?php 
+            // Only show debug information if specifically requested
+            $show_debug = isset($_GET['debug']) && $_GET['debug'] == 'true';
+            
+            if ($show_debug): 
+            ?>
+                <!-- Direct cart status check -->
+                <div style="background: #e3f2fd; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.9rem; text-align: left;">
+                    Cart Status: <?php echo !empty($_SESSION['cart']) ? 'Contains items' : 'Empty'; ?> 
+                    (<?php echo count($_SESSION['cart']); ?> items)
+                </div>
+                
+                <!-- DEBUG OUTPUT: Display direct database query results -->
+                <div style="background: #fff3cd; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.9rem; text-align: left; border: 1px solid #ffeeba;">
+                    <h3>DEBUG: Direct Query Test</h3>
+                    <?php
+                    // Direct query to verify product price
+                    $debug_query = "SELECT id, name, price FROM products WHERE id = 1";
+                    $debug_result = $conn->query($debug_query);
+                    if ($debug_result && $debug_result->num_rows > 0) {
+                        $debug_product = $debug_result->fetch_assoc();
+                        echo "<p>Product ID: " . htmlspecialchars($debug_product['id']) . "</p>";
+                        echo "<p>Name: " . htmlspecialchars($debug_product['name']) . "</p>";
+                        echo "<p>Raw Price: " . htmlspecialchars($debug_product['price']) . "</p>";
+                        echo "<p>Data Type: " . gettype($debug_product['price']) . "</p>";
+                        echo "<p>Is Numeric: " . (is_numeric($debug_product['price']) ? 'Yes' : 'No') . "</p>";
+                        echo "<p>Parsed Float: $" . number_format((float)$debug_product['price'], 2) . "</p>";
                         
-                        // Add additional debug info for multiple products
-                        echo "<h4>Multiple Product Price Check:</h4>";
-                        $multi_query = "SELECT id, name, price FROM products LIMIT 3";
-                        $multi_result = $conn->query($multi_query);
-                        if ($multi_result && $multi_result->num_rows > 0) {
-                            echo "<table style='width: 100%; border-collapse: collapse;'>";
-                            echo "<tr style='background: #eee;'><th style='text-align: left; padding: 5px;'>ID</th><th style='text-align: left; padding: 5px;'>Product</th><th style='text-align: right; padding: 5px;'>Price</th></tr>";
-                            while ($prod = $multi_result->fetch_assoc()) {
-                                echo "<tr style='border-bottom: 1px solid #ddd;'>";
-                                echo "<td style='padding: 5px;'>" . htmlspecialchars($prod['id']) . "</td>";
-                                echo "<td style='padding: 5px;'>" . htmlspecialchars($prod['name']) . "</td>";
-                                echo "<td style='text-align: right; padding: 5px;'>$" . number_format((float)$prod['price'], 2) . "</td>";
-                                echo "</tr>";
+                        // Show actual database schema for the price column
+                        $schema_query = "SHOW COLUMNS FROM products LIKE 'price'";
+                        $schema_result = $conn->query($schema_query);
+                        if ($schema_result && $schema_result->num_rows > 0) {
+                            $column_info = $schema_result->fetch_assoc();
+                            echo "<p>Database Column Type: " . htmlspecialchars($column_info['Type']) . "</p>";
+                            
+                            // Add additional debug info for multiple products
+                            echo "<h4>Multiple Product Price Check:</h4>";
+                            $multi_query = "SELECT id, name, price FROM products LIMIT 3";
+                            $multi_result = $conn->query($multi_query);
+                            if ($multi_result && $multi_result->num_rows > 0) {
+                                echo "<table style='width: 100%; border-collapse: collapse;'>";
+                                echo "<tr style='background: #eee;'><th style='text-align: left; padding: 5px;'>ID</th><th style='text-align: left; padding: 5px;'>Product</th><th style='text-align: right; padding: 5px;'>Price</th></tr>";
+                                while ($prod = $multi_result->fetch_assoc()) {
+                                    echo "<tr style='border-bottom: 1px solid #ddd;'>";
+                                    echo "<td style='padding: 5px;'>" . htmlspecialchars($prod['id']) . "</td>";
+                                    echo "<td style='padding: 5px;'>" . htmlspecialchars($prod['name']) . "</td>";
+                                    echo "<td style='text-align: right; padding: 5px;'>$" . number_format((float)$prod['price'], 2) . "</td>";
+                                    echo "</tr>";
+                                }
+                                echo "</table>";
                             }
-                            echo "</table>";
+                        } else {
+                            echo "<p>Error: Product not found or query failed</p>";
+                            if ($conn->error) {
+                                echo "<p>MySQL Error: " . htmlspecialchars($conn->error) . "</p>";
+                            }
                         }
                     } else {
                         echo "<p>Error: Product not found or query failed</p>";
@@ -464,33 +484,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             echo "<p>MySQL Error: " . htmlspecialchars($conn->error) . "</p>";
                         }
                     }
-                } else {
-                    echo "<p>Error: Product not found or query failed</p>";
-                    if ($conn->error) {
-                        echo "<p>MySQL Error: " . htmlspecialchars($conn->error) . "</p>";
-                    }
-                }
-                ?>
-            </div>
+                    ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php if (empty($_SESSION['cart'])): ?>
-            <!-- Display proper empty cart message -->
+            <!-- Display enhanced empty cart message -->
             <div class="cart-empty">
-                <i class="fas fa-shopping-cart"></i>
-                <h2>Your cart is empty</h2>
-                <p>Looks like you haven't added anything to your cart yet.</p>
+                <i class="fas fa-shopping-cart" style="font-size: 5rem; color: #3498db; margin-bottom: 1.5rem;"></i>
+                <h2 style="font-size: 2rem; margin-bottom: 1rem;">Your Shopping Cart is Empty</h2>
+                <p style="font-size: 1.2rem; color: #7f8c8d; margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+                    We can't wait to see what handcrafted treasures you'll choose from our skilled artisans.
+                </p>
                 
-                <!-- Sample products section for easy testing -->
-                <div style="margin-top: 20px; padding: 15px; background-color: #e3f2fd; border-radius: 8px;">
-                    <h3>Quick Add Options</h3>
+                <a href="<?php echo url('/index.php'); ?>" class="checkout-btn" style="max-width: 300px; margin: 0 auto; display: block; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                    <i class="fas fa-shopping-bag"></i> Explore Products
+                </a>
+                
+                <?php if (isset($_GET['debug']) && $_GET['debug'] == 'true'): ?>
+                <!-- Debug options only visible in debug mode -->
+                <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 10px; border: 1px dashed #dee2e6;">
+                    <h3 style="margin-top: 0; color: #6c757d; font-size: 1.1rem;">Testing Options</h3>
                     <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center;">
                         <form method="POST" action="cart.php">
                             <input type="hidden" name="action" value="add">
                             <input type="hidden" name="product_id" value="1">
                             <input type="hidden" name="quantity" value="1">
                             <button type="submit" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                Add Silver Pendant Necklace
+                                Add Silver Pendant ($59.99)
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="cart.php">
+                            <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="product_id" value="2">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Add Ceramic Vase ($45.00)
                             </button>
                         </form>
                         
@@ -502,10 +533,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </form>
                     </div>
                 </div>
-                
-                <a href="<?php echo url('/index.php'); ?>" class="continue-shopping" style="margin-top: 30px; display: inline-block;">
-                    <i class="fas fa-arrow-left"></i> Browse Products
-                </a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <?php
