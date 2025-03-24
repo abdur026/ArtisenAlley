@@ -7,12 +7,6 @@ require_once '../config/db.php';
 require_once '../config/paths.php';
 require_once '../includes/breadcrumb.php';
 
-// NOTE: TEMPORARY FIX - Force a product into the cart for testing
-$_SESSION['cart'] = [
-    1 => 1  // Product ID 1, quantity 1
-];
-error_log("FORCED: Set cart to product ID 1");
-
 // Initialize the cart if it doesn't exist
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
@@ -94,10 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['cart'] = [];
                 error_log("Debug: Cart reset");
                 
-                // Add a test product - Use ID 1 for simplicity
-                $_SESSION['cart'][1] = 1;
-                error_log("Debug: Test product added to cart. Cart now contains: " . json_encode($_SESSION['cart']));
-                
                 // Force session write
                 session_write_close();
                 session_start();
@@ -114,6 +104,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     3 => 1   // Product ID 3, quantity 1
                 ];
                 error_log("Debug: Sample products added to cart. Cart now contains: " . json_encode($_SESSION['cart']));
+                
+                // Force session write
+                session_write_close();
+                session_start();
+                break;
+                
+            case 'clear_cart':
+                // Clear the cart completely
+                $_SESSION['cart'] = [];
+                error_log("User action: Cart completely cleared");
                 
                 // Force session write
                 session_write_close();
@@ -453,123 +453,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <?php if (empty($_SESSION['cart'])): ?>
-            <!-- HARD OVERRIDE: Display hardcoded cart item instead of empty cart message -->
-            <?php
-            $grandTotal = 0;
-            // Hardcoded product IDs that will always be shown
-            $hardcoded_products = [1];
-            ?>
-            <div class="cart-items">
-                <?php foreach ($hardcoded_products as $product_id):
-                    try {
-                        // Simplified direct query for clearer debugging
-                        $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
-                        if (!$stmt) {
-                            throw new Exception("Failed to prepare statement: " . $conn->error);
-                        }
-                        $stmt->bind_param("i", $product_id);
-                        if (!$stmt->execute()) {
-                            throw new Exception("Failed to execute query: " . $stmt->error);
-                        }
-                        $result = $stmt->get_result();
-                        
-                        if ($result && $result->num_rows > 0):
-                        $product = $result->fetch_assoc();
-                        
-                        // Force quantity to 1
-                        $quantity = 1;
-                        
-                        // MORE EXPLICIT price handling with error reporting
-                        $raw_price = $product['price'];
-                        error_log("Raw price from DB: " . var_export($raw_price, true) . " (type: " . gettype($raw_price) . ")");
-                        
-                        // Ensure price is numeric - with very explicit conversion
-                        $price = 0;
-                        if (is_numeric($raw_price)) {
-                            $price = (float)$raw_price;
-                            error_log("Converted price to: " . $price);
-                        } else {
-                            error_log("WARNING: Non-numeric price detected: " . var_export($raw_price, true));
-                            // Force a fallback price for demonstration
-                            $price = 59.99;
-                            error_log("Using fallback price: " . $price);
-                        }
-                        
-                        $total = $price * $quantity;
-                        $grandTotal += $total;
-                        
-                        // Debug the calculation
-                        error_log("Price: $price, Quantity: $quantity, Total: $total, Grand Total: $grandTotal");
-                ?>
-                    <div class="cart-item">
-                        <?php
-                        $image_url = !empty($product['image']) ? (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/' . $product['image'] : (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/placeholder.jpg';
-                        ?>
-                        <img src="<?php echo htmlspecialchars($image_url); ?>" 
-                             alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>">
-                        <div class="product-name"><?php echo htmlspecialchars($product['name']); ?></div>
-                        <div class="quantity-controls">
-                            <form method="POST" action="cart.php" style="display: flex; gap: 0.5rem; align-items: center;">
-                                <input type="hidden" name="action" value="update">
-                                <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
-                                <input type="number" name="quantity" value="<?php echo $quantity; ?>" 
-                                       min="1" class="quantity-input">
-                                <button type="submit" class="update-btn">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </form>
-                        </div>
-                        <div class="price">$<?php echo number_format($price, 2); ?></div>
-                        <div class="total">$<?php echo number_format($total, 2); ?></div>
+            <!-- Display proper empty cart message -->
+            <div class="cart-empty">
+                <i class="fas fa-shopping-cart"></i>
+                <h2>Your cart is empty</h2>
+                <p>Looks like you haven't added anything to your cart yet.</p>
+                
+                <!-- Sample products section for easy testing -->
+                <div style="margin-top: 20px; padding: 15px; background-color: #e3f2fd; border-radius: 8px;">
+                    <h3>Quick Add Options</h3>
+                    <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center;">
                         <form method="POST" action="cart.php">
-                            <input type="hidden" name="action" value="remove">
-                            <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
-                            <button type="submit" class="remove-btn">
-                                <i class="fas fa-trash"></i>
+                            <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="product_id" value="1">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Add Silver Pendant Necklace
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="cart.php">
+                            <input type="hidden" name="action" value="add_samples">
+                            <button type="submit" style="padding: 8px 15px; background: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Add Sample Products
                             </button>
                         </form>
                     </div>
-                <?php 
-                        endif;
-                    } catch (Exception $e) {
-                        error_log("Error in cart.php: " . $e->getMessage());
-                        continue;
-                    }
-                endforeach; 
-                ?>
-            </div>
-
-            <div class="cart-summary">
-                <?php
-                // FAILSAFE: If grandTotal is still 0, force it to 59.99 for display
-                if ($grandTotal <= 0) {
-                    error_log("WARNING: Grand total was $grandTotal - forcing to 59.99 as failsafe");
-                    $grandTotal = 59.99;
-                }
-                ?>
-                <div class="summary-row">
-                    <span>Subtotal</span>
-                    <span>$<?php echo number_format($grandTotal, 2); ?></span>
-                </div>
-                <div class="summary-row">
-                    <span>Shipping</span>
-                    <span>Free</span>
-                </div>
-                <div class="summary-row grand-total">
-                    <span>Total</span>
-                    <span>$<?php echo number_format($grandTotal, 2); ?></span>
                 </div>
                 
-                <div style="padding: 1rem; margin-top: 1rem; background-color: #d4edda; color: #155724; border-left: 4px solid #c3e6cb;">
-                    <p><strong>Note:</strong> We've displayed this product in your cart for demonstration purposes.</p>
-                    <p>The application is having issues with session persistence, but product information is still accessible.</p>
-                </div>
-                
-                <a href="<?php echo url('/checkout.php'); ?>" class="checkout-btn">
-                    <i class="fas fa-lock"></i> Proceed to Checkout
-                </a>
-                <a href="<?php echo url('/index.php'); ?>" class="continue-shopping">
-                    <i class="fas fa-arrow-left"></i> Continue Shopping
+                <a href="<?php echo url('/index.php'); ?>" class="continue-shopping" style="margin-top: 30px; display: inline-block;">
+                    <i class="fas fa-arrow-left"></i> Browse Products
                 </a>
             </div>
         <?php else: ?>
@@ -676,17 +589,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>$<?php echo number_format($grandTotal, 2); ?></span>
                 </div>
                 
-                <div style="padding: 1rem; margin-top: 1rem; background-color: #d4edda; color: #155724; border-left: 4px solid #c3e6cb;">
-                    <p><strong>Note:</strong> We've displayed this product in your cart for demonstration purposes.</p>
-                    <p>The application is having issues with session persistence, but product information is still accessible.</p>
-                </div>
-                
                 <a href="<?php echo url('/checkout.php'); ?>" class="checkout-btn">
                     <i class="fas fa-lock"></i> Proceed to Checkout
                 </a>
                 <a href="<?php echo url('/index.php'); ?>" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
+                
+                <form method="POST" action="cart.php" style="margin-top: 1rem;">
+                    <input type="hidden" name="action" value="clear_cart">
+                    <button type="submit" style="width: 100%; padding: 0.8rem; background: #f8f9fa; color: #e74c3c; border: 2px solid #e74c3c; border-radius: 12px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-trash-alt"></i> Clear Cart
+                    </button>
+                </form>
             </div>
         <?php endif; ?>
     </div>
