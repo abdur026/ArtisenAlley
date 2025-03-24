@@ -469,21 +469,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $grandTotal = 0;
             error_log('Cart contents: ' . print_r($_SESSION['cart'], true));
             
-            // Prepare a query to get all product details at once
+            // Get product details
+            $products_by_id = array();
             if (!empty($_SESSION['cart'])) {
-                $product_ids = array_keys($_SESSION['cart']);
-                $placeholders = str_repeat('?,', count($product_ids) - 1) . '?';
-                $stmt = $conn->prepare("SELECT id, name, price FROM products WHERE id IN ($placeholders)");
-                $stmt->bind_param(str_repeat('i', count($product_ids)), ...$product_ids);
-                $stmt->execute();
-                $products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-                
-                // Index products by ID for easy lookup
-                $products_by_id = array();
-                foreach ($products as $product) {
-                    $products_by_id[$product['id']] = $product;
+                foreach ($_SESSION['cart'] as $pid => $qty) {
+                    $stmt = $conn->prepare("SELECT id, name, price FROM products WHERE id = ?");
+                    $stmt->bind_param("i", $pid);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    if ($product = $result->fetch_assoc()) {
+                        $products_by_id[$pid] = $product;
+                    }
                 }
-                
                 error_log('Found products: ' . print_r($products_by_id, true));
             }
             ?>
@@ -521,7 +518,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <p class="subtotal-label">Subtotal:</p>
                             <p class="subtotal-amount">$<?php echo number_format($total, 2); ?></p>
                         </div>
-                        <form method="POST" action="cart.php">
+                        <form method="POST" action="<?php echo url('/cart.php'); ?>">
                             <input type="hidden" name="action" value="remove">
                             <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
                             <button type="submit" class="remove-btn">
