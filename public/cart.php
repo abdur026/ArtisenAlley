@@ -63,6 +63,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unset($_SESSION['cart'][$product_id]);
                 }
                 break;
+            case 'debug_reset':
+                // Clear the cart
+                $_SESSION['cart'] = [];
+                
+                // Add a test product - Use ID 1 for simplicity
+                $_SESSION['cart'][1] = 1;
+                
+                error_log("Debug: Cart reset and test product added");
+                break;
         }
     }
     header("Location: cart.php");
@@ -375,10 +384,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="cart-items">
                 <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
                     try {
-                        $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.image, u.name as artisan_name 
-                                              FROM products p 
-                                              LEFT JOIN users u ON p.artisan_id = u.id 
-                                              WHERE p.id = ?");
+                        // Debug SQL query
+                        error_log("Cart Debug - Executing query for product ID: " . $product_id);
+                        
+                        $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.image, u.name as artisan_name, 
+                                             CAST(p.price AS DECIMAL(10,2)) as price_decimal,
+                                             CAST(p.price AS CHAR) as price_string
+                                             FROM products p 
+                                             LEFT JOIN users u ON p.artisan_id = u.id 
+                                             WHERE p.id = ?");
                         if (!$stmt) {
                             throw new Exception("Failed to prepare statement: " . $conn->error);
                         }
@@ -397,7 +411,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Debug product data retrieved
                         error_log("Cart Debug - Product data: " . json_encode($product));
                         
-                        $total = $product['price'] * $quantity;
+                        // Make sure price is treated as a numeric value
+                        $price = floatval($product['price_decimal'] ?? $product['price']);
+                        error_log("Cart Debug - Original price: {$product['price']}, decimal: {$product['price_decimal']}, string: {$product['price_string']}, converted: {$price}, type: " . gettype($price));
+                        
+                        $total = $price * $quantity;
+                        error_log("Cart Debug - Quantity: {$quantity}, Total: {$total}");
                         $grandTotal += $total;
                 ?>
                     <div class="cart-item">
@@ -418,7 +437,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </button>
                             </form>
                         </div>
-                        <div class="price">$<?php echo number_format($product['price'], 2); ?></div>
+                        <div class="price">$<?php echo number_format($price, 2); ?></div>
                         <div class="total">$<?php echo number_format($total, 2); ?></div>
                         <form method="POST" action="cart.php">
                             <input type="hidden" name="action" value="remove">
@@ -463,6 +482,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>Total</span>
                     <span>$<?php echo number_format($grandTotal, 2); ?></span>
                 </div>
+                
+                <?php if ($grandTotal == 0): ?>
+                <div style="padding: 1rem; margin-top: 1rem; background-color: #fff3cd; color: #856404; border-left: 4px solid #ffeeba;">
+                    <p><strong>Debug Info:</strong> The total is still $0.00. This may indicate an issue with product prices in the database.</p>
+                    
+                    <p><strong>Cart contents:</strong></p>
+                    <pre><?php var_dump($_SESSION['cart']); ?></pre>
+                    
+                    <p>Let's try to insert a test product to see if the cart can display it properly:</p>
+                    <?php
+                    try {
+                        // First, check if test product exists
+                        $test_query = $conn->prepare("SELECT id, name, price FROM products WHERE id = 1 LIMIT 1");
+                        $test_query->execute();
+                        $test_result = $test_query->get_result();
+                        
+                        if ($test_result && $test_result->num_rows > 0) {
+                            $test_product = $test_result->fetch_assoc();
+                            echo "<p>Test product exists: ID {$test_product['id']}, Name: {$test_product['name']}, Price: \${$test_product['price']}</p>";
+                            
+                            // Check if the price is valid
+                            if (is_numeric($test_product['price']) && $test_product['price'] > 0) {
+                                echo "<p>The price value is valid.</p>";
+                            } else {
+                                echo "<p>The price value is invalid: {$test_product['price']}</p>";
+                            }
+                        } else {
+                            echo "<p>No test product found in the database.</p>";
+                        }
+                        
+                        // Check the database schema for the price column
+                        echo "<p><strong>Checking database schema:</strong></p>";
+                        $schema_query = $conn->query("DESCRIBE products price");
+                        if ($schema_query && $schema_query->num_rows > 0) {
+                            $column_info = $schema_query->fetch_assoc();
+                            echo "<p>Price column type: " . htmlspecialchars($column_info['Type']) . "</p>";
+                        } else {
+                            echo "<p>Could not get schema information.</p>";
+                        }
+                    } catch (Exception $e) {
+                        echo "<p>Error during test: " . htmlspecialchars($e->getMessage()) . "</p>";
+                    }
+                    ?>
+                    
+                    <form method="POST" action="cart.php" style="margin-top: 1rem;">
+                        <input type="hidden" name="action" value="debug_reset">
+                        <button type="submit" style="padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Debug: Reset Cart & Add Test Product
+                        </button>
+                    </form>
+                </div>
+                <?php endif; ?>
+                
                 <a href="<?php echo url('/checkout.php'); ?>" class="checkout-btn">
                     <i class="fas fa-lock"></i> Proceed to Checkout
                 </a>
