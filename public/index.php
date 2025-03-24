@@ -54,7 +54,7 @@ $categories_result = $conn->query($categories_query);
                         <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
                         <p class="product-description"><?php echo htmlspecialchars(substr($product['description'], 0, 100)) . '...'; ?></p>
-                        <a href="/product.php?id=<?php echo $product['id']; ?>" class="cta-button">View Details</a>
+                        <a href="product.php?id=<?php echo $product['id']; ?>" class="cta-button">View Details</a>
                     </div>
                 </div>
                 <?php 

@@ -443,20 +443,20 @@ if (isset($_SESSION['debug'])) {
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
+            <a href="index.php">Home</a>
             <div>
-                <a href="/public/cart.php">
+                <a href="cart.php">
                     <i class="fas fa-shopping-cart"></i> Cart
                     <?php if (!empty($_SESSION['cart'])): ?>
                         <span>(<?php echo array_sum($_SESSION['cart']); ?>)</span>
                     <?php endif; ?>
                 </a>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
+                    <a href="profile.php">Profile</a>
+                    <a href="logout.php">Logout</a>
                 <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
+                    <a href="login.php">Login</a>
+                    <a href="register.php">Register</a>
                 <?php endif; ?>
             </div>
         </div>
