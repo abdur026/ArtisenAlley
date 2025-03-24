@@ -81,17 +81,25 @@ function asset_url($path) {
         return SITE_ROOT ?: '/';
     }
     
+    // Save original path for debugging
+    $debug_original_path = $path;
+    $debug_result = '';
+    
     if ($is_ubco_server) {
         // For UBCO server, we need to return the full public path for assets
-        // The public directory contains the assets
-        return BASE_URL . '/' . $path;
+        $debug_result = BASE_URL . '/' . $path;
     } else if (!empty(SITE_ROOT)) {
         // For other server environments with defined site root
-        return SITE_ROOT . '/' . $path;
+        $debug_result = SITE_ROOT . '/' . $path;
     } else {
         // For local development
-        return '/' . $path;
+        $debug_result = '/' . $path;
     }
+    
+    // Add debugging info as HTML comment
+    // echo "<!-- asset_url debug: original='$debug_original_path', result='$debug_result' -->";
+    
+    return $debug_result;
 }
 
 /**

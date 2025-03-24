@@ -72,10 +72,16 @@ $predefined_categories = [
                 // Use database products if available
                 if ($products_available):
                     while($product = $products_result->fetch_assoc()): 
-                        $image_url = !empty($product['image']) ? asset_url('assets/images/' . $product['image']) : asset_url('assets/images/placeholder.jpg');
+                        // Check if image file exists
+                        $product_image = !empty($product['image']) ? $product['image'] : 'placeholder.jpg';
+                        $image_path = __DIR__ . '/assets/images/' . $product_image;
+                        // Debug product image path
+                        echo "<!-- Product: {$product['name']}, Image path: $image_path, Exists: " . (file_exists($image_path) ? 'Yes' : 'No') . " -->";
+                        // Use direct path for asset_url
+                        $image_url = asset_url('assets/images/' . $product_image);
                 ?>
                 <div class="product-card">
-                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                    <img src="<?php echo (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/' . htmlspecialchars($product_image); ?>" 
                          alt="<?php echo htmlspecialchars($product['name'] ?? 'Product'); ?>" 
                          class="product-image">
                     <div class="product-info">
@@ -90,10 +96,16 @@ $predefined_categories = [
                 // Otherwise use sample products 
                 else:
                     foreach ($sample_products as $product):
-                        $image_url = !empty($product['image']) ? asset_url('assets/images/' . $product['image']) : asset_url('assets/images/placeholder.jpg');
+                        // Check if image file exists
+                        $product_image = !empty($product['image']) ? $product['image'] : 'placeholder.jpg';
+                        $image_path = __DIR__ . '/assets/images/' . $product_image;
+                        // Debug sample product image path
+                        echo "<!-- Sample Product: {$product['name']}, Image path: $image_path, Exists: " . (file_exists($image_path) ? 'Yes' : 'No') . " -->";
+                        // Use direct path for asset_url
+                        $image_url = asset_url('assets/images/' . $product_image);
                 ?>
                 <div class="product-card">
-                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                    <img src="<?php echo (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/' . htmlspecialchars($product_image); ?>" 
                          alt="<?php echo htmlspecialchars($product['name'] ?? 'Product'); ?>" 
                          class="product-image">
                     <div class="product-info">
@@ -122,12 +134,16 @@ $predefined_categories = [
                     while($category = $categories_result->fetch_assoc()): 
                         $cat_name = htmlspecialchars($category['name'] ?? '');
                         $image_name = strtolower(str_replace(' ', '-', $cat_name)) . '.jpg';
-                        $image_url = file_exists(__DIR__ . '/assets/images/categories/' . $image_name) ? 
+                        // Full server path for file_exists check
+                        $image_path = __DIR__ . '/assets/images/categories/' . $image_name;
+                        // Debug file path check
+                        echo "<!-- Category: $cat_name, Image path: $image_path, Exists: " . (file_exists($image_path) ? 'Yes' : 'No') . " -->";
+                        $image_url = file_exists($image_path) ? 
                             asset_url('assets/images/categories/' . $image_name) : 
                             asset_url('assets/images/placeholder.jpg');
                 ?>
                 <div class="category-card">
-                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                    <img src="<?php echo (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/categories/' . htmlspecialchars($image_name); ?>" 
                          alt="<?php echo htmlspecialchars($cat_name); ?>" 
                          class="category-image">
                     <h3><?php echo $cat_name; ?></h3>
@@ -139,12 +155,16 @@ $predefined_categories = [
                 else:
                     foreach ($predefined_categories as $cat_name):
                         $image_name = strtolower(str_replace(' ', '-', $cat_name)) . '.jpg';
-                        $image_url = file_exists(__DIR__ . '/assets/images/categories/' . $image_name) ? 
+                        // Full server path for file_exists check
+                        $image_path = __DIR__ . '/assets/images/categories/' . $image_name;
+                        // Debug file path check
+                        echo "<!-- Predefined Category: $cat_name, Image path: $image_path, Exists: " . (file_exists($image_path) ? 'Yes' : 'No') . " -->";
+                        $image_url = file_exists($image_path) ? 
                             asset_url('assets/images/categories/' . $image_name) : 
                             asset_url('assets/images/placeholder.jpg');
                 ?>
                 <div class="category-card">
-                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                    <img src="<?php echo (SITE_ROOT ? SITE_ROOT : '') . '/public/assets/images/categories/' . htmlspecialchars($image_name); ?>" 
                          alt="<?php echo htmlspecialchars($cat_name); ?>" 
                          class="category-image">
                     <h3><?php echo $cat_name; ?></h3>
