@@ -1,22 +1,8 @@
 <?php
 session_start();
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 require_once '../config/db.php';
 require_once '../config/paths.php';
 require_once '../includes/breadcrumb.php';
-
-// Debug session
-error_log('Session ID: ' . session_id());
-error_log('Session data: ' . print_r($_SESSION, true));
-
-// Check database connection
-if ($conn->connect_error) {
-    error_log('Database connection failed: ' . $conn->connect_error);
-    die('Database connection failed. Please try again later.');
-}
-error_log('Database connection successful');
 
 // Initialize the cart if it doesn't exist
 if (!isset($_SESSION['cart'])) {
@@ -88,7 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval';">
     <title>Your Shopping Cart - Artisan Alley</title>
     <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -374,27 +359,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1><i class="fas fa-shopping-cart"></i> Your Shopping Cart</h1>
         </div>
 
-        <?php 
-        // Debug cart state
-        error_log('Cart state check - isset: ' . isset($_SESSION['cart']) . ', empty: ' . (empty($_SESSION['cart']) ? 'true' : 'false'));
-        if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])): ?>
+        <?php if (empty($_SESSION['cart'])): ?>
             <div class="cart-empty">
                 <i class="fas fa-shopping-basket"></i>
                 <h2>Your cart is empty</h2>
                 <p>Looks like you haven't added any items to your cart yet.</p>
-                <a href="<?php echo url('/index.php'); ?>" class="continue-shopping">
+                <a href="/public/index.php" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
             </div>
         <?php else: ?>
             <?php
             $grandTotal = 0;
-            error_log('Cart contents: ' . print_r($_SESSION['cart'], true));
             ?>
             <div class="cart-items">
                 <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
                     try {
-                        error_log('Fetching product with ID: ' . $product_id);
                         $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
                         if (!$stmt) {
                             throw new Exception("Failed to prepare statement: " . $conn->error);
@@ -404,7 +384,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             throw new Exception("Failed to execute query: " . $stmt->error);
                         }
                         $result = $stmt->get_result();
-                        error_log('Query result: ' . ($result ? 'has results' : 'no results') . ', num_rows: ' . ($result ? $result->num_rows : 'N/A'));
                         if ($result && $result->num_rows > 0):
                         $product = $result->fetch_assoc();
                         $total = $product['price'] * $quantity;
@@ -474,13 +453,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.remove-btn').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    const cartItem = this.closest('.cart-item');
-                    cartItem.style.opacity = '0';
-                    cartItem.style.transform = 'translateX(20px)';
-                });
+        
+        document.querySelectorAll('.remove-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const cartItem = this.closest('.cart-item');
+                cartItem.style.opacity = '0';
+                cartItem.style.transform = 'translateX(20px)';
             });
         });
     </script>
