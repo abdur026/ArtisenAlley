@@ -13,6 +13,35 @@ if (!isset($_SESSION['cart'])) {
     error_log("Cart initialized: empty array created in session");
 }
 
+// Make sure we're using integers for product IDs in the cart
+$fixed_cart = [];
+$cart_needed_fixing = false;
+foreach ($_SESSION['cart'] as $pid => $qty) {
+    $fixed_pid = (int)$pid;
+    if ($fixed_pid != $pid || !is_numeric($pid)) {
+        $cart_needed_fixing = true;
+        error_log("Fixed product ID format from $pid to $fixed_pid");
+    }
+    $fixed_cart[$fixed_pid] = (int)$qty;
+}
+
+if ($cart_needed_fixing) {
+    $_SESSION['cart'] = $fixed_cart;
+    error_log("Cart product IDs converted to integers: " . json_encode($_SESSION['cart']));
+}
+
+// Auto-fix mode: If we detect the cart has items but nothing is displaying properly
+// AND this isn't a POST request (to avoid loops), redirect to fix the cart
+if (isset($_GET['auto_fix']) && $_GET['auto_fix'] == 'true' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    error_log("Auto-fix mode activated for cart");
+    $_SERVER['REQUEST_METHOD'] = 'POST'; // Fake a POST request
+    $_POST['action'] = 'fix_cart';
+    
+    // This will execute the fix_cart action without a redirect
+    // We just need to make sure we don't exit after handling it
+    $skip_redirect = true;
+}
+
 // Direct debug - always log cart contents
 error_log("Current cart contents: " . json_encode($_SESSION['cart']));
 
@@ -148,17 +177,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $valid_ids = [1, 2, 3, 4, 5]; // Known valid product IDs
                 $idx = 0;
                 
-                // Convert any invalid product IDs to valid ones
+                // First check if there are any existing valid IDs we can keep
+                $has_valid_products = false;
                 foreach ($_SESSION['cart'] as $pid => $qty) {
-                    if (!in_array($pid, $valid_ids)) {
-                        // Replace with a valid ID from our list
-                        $replacement_id = $valid_ids[$idx % count($valid_ids)];
-                        $fixed_cart[$replacement_id] = $qty;
-                        $idx++;
-                        error_log("Fixed cart: Replaced product ID $pid with $replacement_id");
-                    } else {
-                        // Keep valid products as they are
-                        $fixed_cart[$pid] = $qty;
+                    if (in_array((int)$pid, $valid_ids)) {
+                        $has_valid_products = true;
+                        $fixed_cart[(int)$pid] = (int)$qty;
+                        error_log("Kept valid product ID: $pid in cart");
+                    }
+                }
+                
+                // If no valid products, then replace invalid ones with valid ones
+                if (!$has_valid_products) {
+                    // Convert any invalid product IDs to valid ones
+                    foreach ($_SESSION['cart'] as $pid => $qty) {
+                        if (!in_array((int)$pid, $valid_ids)) {
+                            // Replace with a valid ID from our list
+                            $replacement_id = $valid_ids[$idx % count($valid_ids)];
+                            $fixed_cart[$replacement_id] = (int)$qty;
+                            $idx++;
+                            error_log("Fixed cart: Replaced product ID $pid with $replacement_id");
+                        } else {
+                            // Keep valid products as they are
+                            $fixed_cart[(int)$pid] = (int)$qty;
+                        }
                     }
                 }
                 
@@ -190,8 +232,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
         }
     }
-    header("Location: cart.php");
-    exit;
+    // Only redirect if we're not in auto-fix mode
+    if (!isset($skip_redirect) || $skip_redirect !== true) {
+        header("Location: cart.php");
+        exit;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -673,7 +718,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             continue;
                         }
                         
-                        error_log("Processing product ID: $product_id with quantity: $quantity");
+                        // Ensure product_id is treated as an integer for array lookups
+                        $product_id = (int)$product_id;
+                        
+                        error_log("Processing product ID: $product_id (type: " . gettype($product_id) . ") with quantity: $quantity");
                         
                         // Try to get product from database first
                         $product = null;
@@ -683,15 +731,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $product = $direct_result->fetch_assoc();
                             error_log("Found product in DB: " . json_encode($product));
                         } else {
-                            error_log("Product not found in DB, checking hardcoded fallback");
-                            // Fall back to hardcoded products if available
-                            if (isset($hardcoded_products[$product_id])) {
+                            error_log("Product not found in DB, checking hardcoded fallback. Error: " . $conn->error);
+                            
+                            // Debug output of our hardcoded products array
+                            error_log("Available hardcoded products: " . implode(", ", array_keys($hardcoded_products)));
+                            
+                            // Fall back to hardcoded products if available - using strict integer comparison
+                            if (array_key_exists($product_id, $hardcoded_products)) {
                                 $product = $hardcoded_products[$product_id];
                                 $using_hardcoded = true;
-                                error_log("Using hardcoded product: " . json_encode($product));
+                                error_log("Using hardcoded product for ID $product_id: " . json_encode($product));
                             } else {
-                                // Generate a dynamic fallback product if nothing else works
-                                error_log("Product ID $product_id not found, creating dynamic fallback product");
+                                // Generate a dynamic fallback product as last resort
+                                error_log("Product ID $product_id not found in hardcoded list either, creating dynamic fallback");
                                 $product = [
                                     'id' => $product_id,
                                     'name' => getProductNameFromId($product_id),
@@ -703,7 +755,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
                         
-                        if ($product) {
+                        // Double-check we have a valid product before displaying
+                        if ($product && is_array($product) && isset($product['name'])) {
                             $itemCount++; // Increment valid item count
                             
                             // Get price from product
@@ -715,7 +768,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $total = $price * $quantity;
                             $grandTotal += $total;
                             
-                            error_log("Cart item - ID: {$product['id']}, Name: {$product['name']}, " .
+                            error_log("Displaying cart item - ID: {$product['id']}, Name: {$product['name']}, " .
                                      "Price: $price, Quantity: $quantity, Total: $total");
                 ?>
                     <div class="cart-item">
@@ -756,16 +809,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 <?php
                         } else {
-                            error_log("No product information available for ID: $product_id");
+                            error_log("ERROR: Invalid product data structure for ID: $product_id. Data: " . json_encode($product));
                         }
                     } catch (Exception $e) {
-                        error_log("Error in cart.php: " . $e->getMessage());
+                        error_log("Error in cart.php: " . $e->getMessage() . "\n" . $e->getTraceAsString());
                         continue;
                     }
                 endforeach;
                 
                 // If no valid items were found, display a message
                 if ($itemCount == 0):
+                    // Auto-redirect to fix if we detect cart items but nothing valid is displaying
+                    // Only do this once to prevent redirect loops
+                    if (count($_SESSION['cart']) > 0 && !isset($_GET['auto_fix']) && !isset($_GET['no_fix'])):
+                        // We'll only do this for GET requests
+                        if ($_SERVER['REQUEST_METHOD'] === 'GET'):
+                            error_log("Auto-redirecting to fix cart");
+                            ?>
+                            <div style="padding: 1rem; background-color: #e3f2fd; color: #0c5460; border-radius: 8px; margin-bottom: 1rem;">
+                                <p><i class="fas fa-sync-alt fa-spin"></i> Your cart needs attention. We're fixing it for you...</p>
+                            </div>
+                            <script>
+                                // Redirect after a short delay so user can see what's happening
+                                setTimeout(function() {
+                                    window.location.href = '<?php echo url('/cart.php?auto_fix=true'); ?>';
+                                }, 1500);
+                            </script>
+                            <?php
+                            // Show the rest of the message for users without JavaScript
+                        endif;
+                    endif;
                 ?>
                     <div style="padding: 2rem; text-align: center; color: #7f8c8d;">
                         <p><i class="fas fa-exclamation-circle"></i> No valid products were found in your cart.</p>
