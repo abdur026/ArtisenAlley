@@ -441,6 +441,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($schema_result && $schema_result->num_rows > 0) {
                         $column_info = $schema_result->fetch_assoc();
                         echo "<p>Database Column Type: " . htmlspecialchars($column_info['Type']) . "</p>";
+                        
+                        // Add additional debug info for multiple products
+                        echo "<h4>Multiple Product Price Check:</h4>";
+                        $multi_query = "SELECT id, name, price FROM products LIMIT 3";
+                        $multi_result = $conn->query($multi_query);
+                        if ($multi_result && $multi_result->num_rows > 0) {
+                            echo "<table style='width: 100%; border-collapse: collapse;'>";
+                            echo "<tr style='background: #eee;'><th style='text-align: left; padding: 5px;'>ID</th><th style='text-align: left; padding: 5px;'>Product</th><th style='text-align: right; padding: 5px;'>Price</th></tr>";
+                            while ($prod = $multi_result->fetch_assoc()) {
+                                echo "<tr style='border-bottom: 1px solid #ddd;'>";
+                                echo "<td style='padding: 5px;'>" . htmlspecialchars($prod['id']) . "</td>";
+                                echo "<td style='padding: 5px;'>" . htmlspecialchars($prod['name']) . "</td>";
+                                echo "<td style='text-align: right; padding: 5px;'>$" . number_format((float)$prod['price'], 2) . "</td>";
+                                echo "</tr>";
+                            }
+                            echo "</table>";
+                        }
+                    } else {
+                        echo "<p>Error: Product not found or query failed</p>";
+                        if ($conn->error) {
+                            echo "<p>MySQL Error: " . htmlspecialchars($conn->error) . "</p>";
+                        }
                     }
                 } else {
                     echo "<p>Error: Product not found or query failed</p>";
@@ -492,7 +514,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="cart-items">
                 <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
                     try {
-                        $stmt = $conn->prepare("SELECT p.id, p.name, p.price+0.0 as price, p.image, u.name as artisan_name
+                        $stmt = $conn->prepare("SELECT p.id, p.name, CAST(p.price AS DECIMAL(10,2)) as price, p.image, u.name as artisan_name
                                              FROM products p 
                                              LEFT JOIN users u ON p.artisan_id = u.id 
                                              WHERE p.id = ?");
@@ -508,21 +530,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($result && $result->num_rows > 0):
                         $product = $result->fetch_assoc();
                         
-                        // MORE EXPLICIT price handling with error reporting
-                        $raw_price = $product['price'];
-                        error_log("Session cart item - Raw price from DB: " . var_export($raw_price, true) . " (type: " . gettype($raw_price) . ")");
-                        
-                        // Ensure price is numeric - with very explicit conversion
-                        $price = 0;
-                        if (is_numeric($raw_price)) {
-                            $price = (float)$raw_price;
-                            error_log("Session cart item - Converted price to: " . $price);
-                        } else {
-                            error_log("WARNING: Session cart item - Non-numeric price detected: " . var_export($raw_price, true));
-                            // Force a fallback price for demonstration
-                            $price = 59.99;
-                            error_log("Session cart item - Using fallback price: " . $price);
-                        }
+                        // Simple price handling - just cast directly to float
+                        $price = (float)$product['price'];
+                        error_log("Product ID: $product_id, Actual price from DB: $price");
                         
                         $total = $price * $quantity;
                         $grandTotal += $total;
@@ -569,13 +579,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="cart-summary">
-                <?php
-                // FAILSAFE: If grandTotal is still 0, force it to 59.99 for display
-                if ($grandTotal <= 0) {
-                    error_log("WARNING: Grand total was $grandTotal - forcing to 59.99 as failsafe");
-                    $grandTotal = 59.99;
-                }
-                ?>
                 <div class="summary-row">
                     <span>Subtotal</span>
                     <span>$<?php echo number_format($grandTotal, 2); ?></span>
