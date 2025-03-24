@@ -12,7 +12,11 @@ require_once __DIR__ . '/../config/paths.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/breadcrumb.php';
 
+// Debug session
+error_log('Session status: ' . print_r($_SESSION, true));
+
 if (!isset($_SESSION['user_id'])) {
+    error_log('User not logged in - redirecting to login');
     header("Location: " . url('/login.php'));
     exit;
 }
@@ -24,6 +28,7 @@ try {
     }
 
     $user_id = $_SESSION['user_id'];
+    error_log('Fetching user data for ID: ' . $user_id);
     
     // Prepare statement with error checking
     $stmt = $conn->prepare("SELECT id, username, first_name, last_name, email, profile_image FROM users WHERE id = ?");
@@ -50,6 +55,8 @@ try {
     if (!$user) {
         throw new Exception("User not found in database");
     }
+
+    error_log('User data fetched successfully: ' . print_r($user, true));
 
     // Combine first and last name for display
     $user['name'] = trim($user['first_name'] . ' ' . $user['last_name']);
