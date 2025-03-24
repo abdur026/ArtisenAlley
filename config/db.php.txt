@@ -1,11 +1,11 @@
 <?php
-// Simple database configuration
+// Basic config
 $servername = "localhost";
 $username = "qrehman";
 $password = "qrehman";
 $dbname = "qrehman";
 
-// Create connection
+// Connect to database
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection

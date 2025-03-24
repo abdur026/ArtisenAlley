@@ -1,14 +1,18 @@
 <?php
 session_start();
+require_once __DIR__ . '/../config/paths.php';
+
+$registration_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+    $first_name = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_STRING);
+    $last_name = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
-    if (!$name || !$email || !$password) {
+    if (!$email || !$password || !$first_name || !$last_name) {
         $_SESSION['error'] = "All fields are required.";
-        header("Location: register.php");
+        header("Location: " . url('/register.php'));
         exit;
     }
 
@@ -33,18 +37,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    require_once '../config/db.php';
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, profile_image) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssss", $name, $email, $hashedPassword, $profile_image);
-
-    if ($stmt->execute()) {
-        $_SESSION['success'] = "Registration successful! Please log in.";
-        header("Location: login.php");
-    } else {
-        $_SESSION['error'] = "Error: " . $stmt->error;
-        header("Location: register.php");
+    try {
+        require_once __DIR__ . '/../config/db.php';
+        
+        if($conn->connect_error) {
+            throw new Exception("Database connection failed: " . $conn->connect_error);
+        }
+        
+        // Use email as the username to ensure uniqueness
+        $username = $email;
+        
+        // Include profile image in the insert
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password, first_name, last_name, profile_image) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssss", $username, $email, $hashedPassword, $first_name, $last_name, $profile_image);
+        
+        if ($stmt->execute()) {
+            $_SESSION['success'] = "Registration successful! You can now log in.";
+            header("Location: " . url('/login.php'));
+            exit;
+        } else {
+            throw new Exception($stmt->error);
+        }
+    } catch (Exception $e) {
+        $registration_error = "Registration failed: " . $e->getMessage();
+        // Log the error
+        error_log("Registration error: " . $e->getMessage());
     }
-    exit;
 }
 ?>
 
@@ -54,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             min-height: 100vh;
@@ -64,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             justify-content: center;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         .register-container {
@@ -313,7 +331,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: none;
         }
     </style>
-    <script src="../src/main.js" defer></script>
+    <script src="<?php echo asset_url('assets/js/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="register-container">
@@ -331,12 +349,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo "<div class='alert alert-success'><i class='fas fa-check-circle'></i> " . $_SESSION['success'] . "</div>";
             unset($_SESSION['success']);
         }
+        if ($registration_error) {
+            echo "<div class='alert alert-error'><i class='fas fa-exclamation-circle'></i> $registration_error</div>";
+        }
         ?>
 
-        <form action="register.php" method="POST" enctype="multipart/form-data" onsubmit="return validateRegistrationForm();">
+        <form action="<?php echo url('/register.php'); ?>" method="POST" enctype="multipart/form-data" onsubmit="return validateRegistrationForm();">
             <div class="form-group">
-                <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                <label for="first_name">First Name</label>
+                <input type="text" id="first_name" name="first_name" required placeholder="Enter your first name">
+                <i class="fas fa-user"></i>
+            </div>
+
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="last_name" required placeholder="Enter your last name">
                 <i class="fas fa-user"></i>
             </div>
 
@@ -376,7 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="login-link">
-            <p>Already have an account? <a href="login.php">Sign in here</a></p>
+            <p>Already have an account? <a href="<?php echo url('/login.php'); ?>">Sign in here</a></p>
         </div>
     </div>
     <script>

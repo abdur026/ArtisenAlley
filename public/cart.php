@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/paths.php';
 require_once '../includes/breadcrumb.php';
 
 // Initialize the cart if it doesn't exist
@@ -74,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Shopping Cart - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -332,14 +333,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
+            <a href="<?php echo url('/index.php'); ?>">Home</a>
             <div>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
+                    <a href="<?php echo url('/profile.php'); ?>">Profile</a>
+                    <a href="<?php echo url('/logout.php'); ?>">Logout</a>
                 <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
+                    <a href="<?php echo url('/login.php'); ?>">Login</a>
+                    <a href="<?php echo url('/register.php'); ?>">Register</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -349,7 +350,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php
         // Generate breadcrumbs
         $breadcrumbs = [
-            ['name' => 'Home', 'url' => 'index.php'],
+            ['name' => 'Home', 'url' => url('/index.php')],
             ['name' => 'Shopping Cart']
         ];
         echo generate_breadcrumbs($breadcrumbs);
@@ -373,19 +374,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ?>
             <div class="cart-items">
                 <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
-                    $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
-                    $stmt->bind_param("i", $product_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($result->num_rows > 0):
+                    try {
+                        $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
+                        if (!$stmt) {
+                            throw new Exception("Failed to prepare statement: " . $conn->error);
+                        }
+                        $stmt->bind_param("i", $product_id);
+                        if (!$stmt->execute()) {
+                            throw new Exception("Failed to execute query: " . $stmt->error);
+                        }
+                        $result = $stmt->get_result();
+                        if ($result && $result->num_rows > 0):
                         $product = $result->fetch_assoc();
                         $total = $product['price'] * $quantity;
                         $grandTotal += $total;
                 ?>
                     <div class="cart-item">
-                        <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
-                             alt="<?php echo htmlspecialchars($product['name']); ?>"
-                             onerror="this.src='assets/images/placeholder.jpg'">
+                        <?php
+                        $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
+                        ?>
+                        <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                             alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>">
                         <div class="product-name"><?php echo htmlspecialchars($product['name']); ?></div>
                         <div class="quantity-controls">
                             <form method="POST" action="cart.php" style="display: flex; gap: 0.5rem; align-items: center;">
@@ -409,7 +418,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </form>
                     </div>
                 <?php 
-                    endif;
+                        endif;
+                    } catch (Exception $e) {
+                        error_log("Error in cart.php: " . $e->getMessage());
+                        // Remove the problematic item from the cart
+                        unset($_SESSION['cart'][$product_id]);
+                        continue;
+                    }
                 endforeach; 
                 ?>
             </div>
@@ -427,10 +442,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>Total</span>
                     <span>$<?php echo number_format($grandTotal, 2); ?></span>
                 </div>
-                <a href="/public/checkout.php" class="checkout-btn">
+                <a href="<?php echo url('/checkout.php'); ?>" class="checkout-btn">
                     <i class="fas fa-lock"></i> Proceed to Checkout
                 </a>
-                <a href="/public/index.php" class="continue-shopping">
+                <a href="<?php echo url('/index.php'); ?>" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
             </div>

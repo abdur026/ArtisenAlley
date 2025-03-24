@@ -1,39 +1,75 @@
 <?php
+// Enable full error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
-require_once '../config/db.php';
+require_once __DIR__ . '/../config/paths.php';
 
+// Redirect if already logged in
+if (isset($_SESSION['user_id'])) {
+    header("Location: " . url('/index.php'));
+    exit;
+}
+
+$login_error = '';
+
+// Debug paths - now only shows when debug_paths parameter is explicitly set
+if (isset($_GET['debug_paths'])) {
+    echo "<pre style='background:#f5f5f5;padding:10px;border:1px solid #ccc;'>";
+    echo "===== LOGIN PAGE DEBUG INFO =====\n";
+    echo "Server Name: " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? '') . "\n";
+    echo "Request URI: " . htmlspecialchars($_SERVER['REQUEST_URI'] ?? '') . "\n";
+    echo "Script Name: " . htmlspecialchars($_SERVER['SCRIPT_NAME'] ?? '') . "\n";
+    echo "Is UBCO Server: " . (strpos($_SERVER['SERVER_NAME'] ?? '', 'cosc360.ok.ubc.ca') !== false ? 'Yes' : 'No') . "\n";
+    echo "BASE_URL: " . (defined('BASE_URL') ? BASE_URL : 'Not defined') . "\n";
+    echo "SITE_ROOT: " . (defined('SITE_ROOT') ? SITE_ROOT : 'Not defined') . "\n";
+    echo "============================\n";
+    echo "</pre>";
+}
+
+// Process login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-    $password = $_POST['password'];
+    try {
+        require_once __DIR__ . '/../config/db.php';
+        
+        if($conn->connect_error) {
+            throw new Exception("Database connection failed: " . $conn->connect_error);
+        }
+    
+        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $password = $_POST['password'];
 
-    if (!$email || !$password) {
-        $_SESSION['error'] = "All fields are required.";
-        header("Location: login.php");
-        exit;
-    }
-
-    $stmt = $conn->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_role'] = $user['role'];
-            header("Location: ../index.php");
-            exit;
-        } else {
-            $_SESSION['error'] = "Incorrect password.";
-            header("Location: login.php");
+        if (!$email || !$password) {
+            $_SESSION['error'] = "All fields are required.";
+            header("Location: " . url('/login.php'));
             exit;
         }
-    } else {
-        $_SESSION['error'] = "User not found.";
-        header("Location: login.php");
-        exit;
+
+        $stmt = $conn->prepare("SELECT id, password, username, first_name, last_name, is_admin FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+            if (password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
+                $_SESSION['is_admin'] = $user['is_admin'] ? true : false;
+                
+                header("Location: " . url('/index.php'));
+                exit;
+            } else {
+                throw new Exception("Password is incorrect");
+            }
+        } else {
+            throw new Exception("No user found with that email");
+        }
+    } catch (Exception $e) {
+        $login_error = "Login failed: " . $e->getMessage();
+        error_log("Login error: " . $e->getMessage());
     }
 }
 ?>
@@ -44,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo asset_url('src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -210,24 +246,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .alert-error {
             background-color: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
+            border-left: 4px solid #ef4444;
+            color: #b91c1c;
+        }
+
+        .alert-error i {
+            color: #ef4444;
         }
 
         .alert-success {
             background-color: #dcfce7;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
+            border-left: 4px solid #22c55e;
+            color: #15803d;
+        }
+
+        .alert-success i {
+            color: #22c55e;
         }
 
         @keyframes slideIn {
             from {
+                transform: translateY(-20px);
                 opacity: 0;
-                transform: translateY(-10px);
             }
             to {
-                opacity: 1;
                 transform: translateY(0);
+                opacity: 1;
             }
         }
 
@@ -236,55 +280,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 margin: 1rem;
                 padding: 1.5rem;
                 width: calc(100% - 2rem);
-                max-width: none;
-            }
-
-            .login-header h1 {
-                font-size: 2rem;
-            }
-
-            .form-group input {
-                font-size: 16px; 
             }
         }
     </style>
+    <script src="<?php echo asset_url('src/main.js'); ?>" defer></script>
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
             <h1>Welcome Back</h1>
-            <p>Sign in to continue your artisan journey</p>
+            <p>Please enter your credentials to access your account</p>
         </div>
 
-        <?php
-        if (isset($_SESSION['error'])) {
-            echo "<div class='alert alert-error'><i class='fas fa-exclamation-circle'></i> " . $_SESSION['error'] . "</div>";
-            unset($_SESSION['error']);
-        }
-        if (isset($_SESSION['success'])) {
-            echo "<div class='alert alert-success'><i class='fas fa-check-circle'></i> " . $_SESSION['success'] . "</div>";
-            unset($_SESSION['success']);
-        }
-        ?>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($_SESSION['error']); ?>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
 
-        <form action="login.php" method="POST">
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <?php echo htmlspecialchars($_SESSION['success']); ?>
+            </div>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+
+        <?php if ($login_error): ?>
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($login_error); ?>
+            </div>
+        <?php endif; ?>
+
+        <form action="<?php echo url('/login.php'); ?>" method="post">
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email">
                 <i class="fas fa-envelope"></i>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
             </div>
-
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
                 <i class="fas fa-lock"></i>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
-
-            <button type="submit" class="login-btn">Sign In</button>
+            <button type="submit" class="login-btn">Login</button>
         </form>
-
         <div class="register-link">
-            <p>Don't have an account? <a href="register.php">Create one here</a></p>
+            Don't have an account? <a href="<?php echo url('/register.php'); ?>">Register</a>
         </div>
     </div>
 </body>

@@ -74,7 +74,7 @@ if (!isset($result)) {
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {

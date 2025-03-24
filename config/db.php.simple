@@ -1,0 +1,31 @@
+<?php
+// Database configuration
+$is_production = (strpos($_SERVER['SERVER_NAME'] ?? '', 'cosc360.ok.ubc.ca') !== false);
+
+if ($is_production) {
+    $servername = "localhost";
+    $username = "qrehman";
+    $password = "qrehman";
+    $dbname = "qrehman";
+} else {
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "handmade_store";
+}
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    error_log("Database connection failed: " . $conn->connect_error);
+    
+    if ($is_production) {
+        echo "<div style='margin: 50px auto; max-width: 800px; padding: 20px; border: 1px solid #ddd;'>";
+        echo "<h2>Database Connection Error</h2>";
+        echo "<p>There was a problem connecting to the database. Please try again later.</p>";
+        echo "</div>";
+    } else {
+        die("Connection failed: " . $conn->connect_error);
+    }
+}
+?>

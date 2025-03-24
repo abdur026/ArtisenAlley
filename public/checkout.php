@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Checkout</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/main.css'); ?>">
 </head>
 <body>
     <header>
