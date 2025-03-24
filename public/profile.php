@@ -48,7 +48,7 @@ try {
         $user['name'] = $user['first_name'] . ' ' . $user['last_name'];
     }
 
-    if (!$user['profile_image']) {
+    if (!isset($user['profile_image']) || empty($user['profile_image'])) {
         $user['profile_image'] = 'default-avatar.jpg';
         $profile_image_data = null;
     } else {
@@ -63,6 +63,9 @@ try {
     $error = "Error: " . $e->getMessage();
     // Log the error
     error_log("Profile error: " . $e->getMessage());
+    // Initialize variables to prevent undefined errors
+    $user = ['name' => 'User', 'email' => 'example@example.com', 'profile_image' => 'default-avatar.jpg'];
+    $profile_image_data = null;
 }
 ?>
 <!DOCTYPE html>
@@ -557,55 +560,77 @@ try {
                     </h2>
                     <div class="reviews-grid">
                         <?php
-                        $reviews_query = "SELECT r.*, p.name as product_name, p.image as product_image 
+                        // First check the column name in the products table
+                        $check_image_column = $conn->query("SHOW COLUMNS FROM products LIKE 'image'");
+                        $image_column_name = ($check_image_column && $check_image_column->num_rows > 0) ? 'image' : 'image_url';
+                        
+                        // Use the correct column name in the query
+                        $reviews_query = "SELECT r.*, p.name as product_name, p.{$image_column_name} as product_image 
                                         FROM reviews r 
                                         JOIN products p ON r.product_id = p.id 
                                         WHERE r.user_id = ? 
                                         ORDER BY r.created_at DESC";
-                        $stmt = $conn->prepare($reviews_query);
-                        $stmt->bind_param("i", $user_id);
-                        $stmt->execute();
-                        $reviews_result = $stmt->get_result();
+                        
+                        try {
+                            $stmt = $conn->prepare($reviews_query);
+                            if (!$stmt) {
+                                throw new Exception("Failed to prepare reviews query: " . $conn->error);
+                            }
+                            $stmt->bind_param("i", $user_id);
+                            $stmt->execute();
+                            $reviews_result = $stmt->get_result();
 
-                        if ($reviews_result->num_rows > 0):
-                            while($review = $reviews_result->fetch_assoc()):
+                            if ($reviews_result && $reviews_result->num_rows > 0):
+                                while($review = $reviews_result->fetch_assoc()):
                         ?>
-                            <div class="review-card">
-                                <div class="review-product">
-                                    <img src="<?php echo asset_url('assets/images/' . htmlspecialchars($review['product_image'])); ?>" 
-                                         alt="<?php echo htmlspecialchars($review['product_name']); ?>"
-                                         class="product-image"
-                                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
-                                    <div class="product-info">
-                                        <h3><?php echo htmlspecialchars($review['product_name']); ?></h3>
-                                        <div class="rating">
-                                            <?php for($i = 1; $i <= 5; $i++): ?>
-                                                <i class="fas fa-star <?php echo $i <= $review['rating'] ? 'filled' : ''; ?>"></i>
-                                            <?php endfor; ?>
+                                <div class="review-card">
+                                    <div class="review-product">
+                                        <img src="<?php echo asset_url('assets/images/' . htmlspecialchars($review['product_image'] ?? 'placeholder.jpg')); ?>" 
+                                             alt="<?php echo htmlspecialchars($review['product_name'] ?? 'Product'); ?>"
+                                             class="product-image"
+                                             onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
+                                        <div class="product-info">
+                                            <h3><?php echo htmlspecialchars($review['product_name'] ?? 'Unknown Product'); ?></h3>
+                                            <div class="rating">
+                                                <?php for($i = 1; $i <= 5; $i++): ?>
+                                                    <i class="fas fa-star <?php echo $i <= ($review['rating'] ?? 0) ? 'filled' : ''; ?>"></i>
+                                                <?php endfor; ?>
+                                            </div>
                                         </div>
                                     </div>
+                                    <p class="review-text"><?php echo htmlspecialchars($review['comment'] ?? ''); ?></p>
+                                    <div class="review-meta">
+                                        <span class="review-date">
+                                            <i class="fas fa-calendar"></i>
+                                            <?php echo date('M d, Y', strtotime($review['created_at'] ?? 'now')); ?>
+                                        </span>
+                                        <a href="<?php echo url('/product.php?id=' . ($review['product_id'] ?? 0)); ?>" class="view-product">
+                                            View Product <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
                                 </div>
-                                <p class="review-text"><?php echo htmlspecialchars($review['comment']); ?></p>
-                                <div class="review-meta">
-                                    <span class="review-date">
-                                        <i class="fas fa-calendar"></i>
-                                        <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
-                                    </span>
-                                    <a href="<?php echo url('/product.php?id=' . $review['product_id']); ?>" class="view-product">
-                                        View Product <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
                         <?php 
-                            endwhile;
-                        else:
+                                endwhile;
+                            else:
+                        ?>
+                                <div class="no-reviews">
+                                    <i class="fas fa-comment-alt"></i>
+                                    <p>You haven't written any reviews yet.</p>
+                                    <a href="<?php echo url('/index.php'); ?>" class="browse-products">Browse Products</a>
+                                </div>
+                        <?php 
+                            endif;
+                        } catch (Exception $e) {
+                            error_log("Reviews error: " . $e->getMessage());
                         ?>
                             <div class="no-reviews">
-                                <i class="fas fa-comment-alt"></i>
-                                <p>You haven't written any reviews yet.</p>
+                                <i class="fas fa-exclamation-circle"></i>
+                                <p>We couldn't load your reviews at this time.</p>
                                 <a href="<?php echo url('/index.php'); ?>" class="browse-products">Browse Products</a>
                             </div>
-                        <?php endif; ?>
+                        <?php
+                        }
+                        ?>
                     </div>
                 </section>
             </main>
