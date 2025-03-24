@@ -538,11 +538,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
             <?php
             $grandTotal = 0;
+            $itemCount = 0; // Track how many valid items we display
             ?>
             <div class="cart-items">
-                <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
+                <?php 
+                // First, verify cart has proper data
+                error_log("Cart showing: " . count($_SESSION['cart']) . " items, Contents: " . json_encode($_SESSION['cart']));
+                
+                foreach ($_SESSION['cart'] as $product_id => $quantity):
                     try {
-                        $stmt = $conn->prepare("SELECT p.id, p.name, CAST(p.price AS DECIMAL(10,2)) as price, p.image, u.name as artisan_name
+                        if (!is_numeric($product_id) || $product_id <= 0) {
+                            error_log("WARNING: Invalid product ID in cart: " . var_export($product_id, true));
+                            continue;
+                        }
+                        
+                        error_log("Processing product ID: $product_id with quantity: $quantity");
+                        
+                        // Direct query for debugging
+                        $direct_query = "SELECT id, name, price FROM products WHERE id = $product_id";
+                        $direct_result = $conn->query($direct_query);
+                        if ($direct_result && $direct_result->num_rows > 0) {
+                            $debug_data = $direct_result->fetch_assoc();
+                            error_log("Direct query - Product ID: $product_id, Name: {$debug_data['name']}, Raw Price: {$debug_data['price']}");
+                        } else {
+                            error_log("WARNING: Direct query found no product with ID: $product_id");
+                        }
+                        
+                        // Now do the prepared statement for actual display with simplified price handling
+                        $stmt = $conn->prepare("SELECT p.id, p.name, p.price + 0 as price_num, p.price as price_raw, p.image, u.name as artisan_name
                                              FROM products p 
                                              LEFT JOIN users u ON p.artisan_id = u.id 
                                              WHERE p.id = ?");
@@ -556,17 +579,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $result = $stmt->get_result();
                         
                         if ($result && $result->num_rows > 0):
-                        $product = $result->fetch_assoc();
-                        
-                        // Simple price handling - just cast directly to float
-                        $price = (float)$product['price'];
-                        error_log("Product ID: $product_id, Actual price from DB: $price");
-                        
-                        $total = $price * $quantity;
-                        $grandTotal += $total;
-                        
-                        // Debug the calculation
-                        error_log("Session cart item - Price: $price, Quantity: $quantity, Total: $total, Grand Total: $grandTotal");
+                            $product = $result->fetch_assoc();
+                            $itemCount++; // Increment valid item count
+                            
+                            // Enhanced price handling with both raw and numeric versions
+                            $raw_price = $product['price_raw'];
+                            $num_price = $product['price_num']; // This should be automatically numeric from MySQL
+                            
+                            error_log("Raw price: " . var_export($raw_price, true) . " (type: " . gettype($raw_price) . ")");
+                            error_log("Numeric price: " . var_export($num_price, true) . " (type: " . gettype($num_price) . ")");
+                            
+                            // Prioritize using the numeric price from MySQL
+                            if (is_numeric($num_price)) {
+                                $price = (float)$num_price;
+                                error_log("Using numeric price from DB: $price");
+                            } else if (is_numeric($raw_price)) {
+                                $price = (float)$raw_price;
+                                error_log("Using converted raw price: $price");
+                            } else {
+                                error_log("WARNING: No valid price found - checking direct query");
+                                // Try to use the debug data as last resort
+                                if (isset($debug_data) && isset($debug_data['price']) && is_numeric($debug_data['price'])) {
+                                    $price = (float)$debug_data['price'];
+                                    error_log("Using debug query price: $price");
+                                } else {
+                                    error_log("WARNING: No usable price - defaulting to 0");
+                                    $price = 0;
+                                }
+                            }
+                            
+                            $total = $price * $quantity;
+                            $grandTotal += $total;
+                            
+                            // Debug the calculation
+                            error_log("Session cart item - Price: $price, Quantity: $quantity, Total: $total, Grand Total: $grandTotal");
                 ?>
                     <div class="cart-item">
                         <?php
@@ -602,11 +648,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         error_log("Error in cart.php: " . $e->getMessage());
                         continue;
                     }
-                endforeach; 
+                endforeach;
+                
+                // If no valid items were found, display a message
+                if ($itemCount == 0):
                 ?>
+                    <div style="padding: 2rem; text-align: center; color: #7f8c8d;">
+                        <p><i class="fas fa-exclamation-circle"></i> No valid products were found in your cart.</p>
+                        <p>This may be due to the products being removed from our inventory.</p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="cart-summary">
+                <?php if ($itemCount > 0): // Only show normal summary if we have valid items ?>
                 <div class="summary-row">
                     <span>Subtotal</span>
                     <span>$<?php echo number_format($grandTotal, 2); ?></span>
@@ -623,6 +678,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="<?php echo url('/checkout.php'); ?>" class="checkout-btn">
                     <i class="fas fa-lock"></i> Proceed to Checkout
                 </a>
+                <?php else: // Show an error message if no valid products were found ?>
+                <div style="padding: 1rem; background-color: #f8d7da; color: #721c24; border-left: 4px solid #f5c6cb; margin-bottom: 1.5rem;">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Your cart contains items that are no longer available.</p>
+                    <p>Please clear your cart and add available products to continue.</p>
+                </div>
+                <?php endif; ?>
+                
                 <a href="<?php echo url('/index.php'); ?>" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
