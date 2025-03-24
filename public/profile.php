@@ -34,16 +34,6 @@ try {
         throw new Exception("Users table not found");
     }
     
-    $stmt = $conn->prepare("SHOW COLUMNS FROM users LIKE 'name'");
-    if (!$stmt) {
-        error_log("Error preparing SHOW COLUMNS query: " . $conn->error);
-        throw new Exception("Failed to check column structure: " . $conn->error);
-    }
-    
-    $stmt->execute();
-    $has_name_column = ($stmt->get_result()->num_rows > 0);
-    error_log("Users table has 'name' column: " . ($has_name_column ? 'Yes' : 'No'));
-
     // Debug available columns
     $columns_result = $conn->query("SHOW COLUMNS FROM users");
     $columns = [];
@@ -52,14 +42,34 @@ try {
     }
     error_log("Available columns in users table: " . implode(", ", $columns));
     
+    // Check if profile_image column exists
+    $has_profile_image = in_array('profile_image', $columns);
+    error_log("Users table has profile_image column: " . ($has_profile_image ? 'Yes' : 'No'));
+    
+    // Check if name column exists
+    $has_name_column = in_array('name', $columns);
+    error_log("Users table has 'name' column: " . ($has_name_column ? 'Yes' : 'No'));
+    
+    // Build query based on available columns
+    $query = "SELECT id, ";
+    
     if ($has_name_column) {
-        // Using single name field
-        $stmt = $conn->prepare("SELECT id, name, email, profile_image FROM users WHERE id = ?");
+        $query .= "name, ";
     } else {
-        // Using first_name and last_name fields
-        $stmt = $conn->prepare("SELECT id, first_name, last_name, email, profile_image FROM users WHERE id = ?");
+        $query .= "first_name, last_name, ";
     }
     
+    $query .= "email";
+    
+    if ($has_profile_image) {
+        $query .= ", profile_image";
+    }
+    
+    $query .= " FROM users WHERE id = ?";
+    
+    error_log("User query: " . $query);
+    
+    $stmt = $conn->prepare($query);
     if (!$stmt) {
         error_log("Error preparing SELECT query: " . $conn->error);
         throw new Exception("Failed to prepare user query: " . $conn->error);
@@ -100,15 +110,12 @@ try {
         $user['name'] = $user['first_name'] . ' ' . $user['last_name'];
     }
 
-    if (!isset($user['profile_image']) || empty($user['profile_image'])) {
-        $user['profile_image'] = 'default-avatar.jpg';
-        $profile_image_data = null;
-    } else {
+    // Set profile_image_data regardless of whether the column exists
+    $profile_image_data = null;
+    if ($has_profile_image && isset($user['profile_image']) && !empty($user['profile_image'])) {
         $image_path = __DIR__ . "/../uploads/" . $user['profile_image'];
         if (file_exists($image_path)) {
             $profile_image_data = base64_encode(file_get_contents($image_path));
-        } else {
-            $profile_image_data = null;
         }
     }
 } catch (Exception $e) {
