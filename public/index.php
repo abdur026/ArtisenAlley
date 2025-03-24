@@ -5,59 +5,6 @@ include __DIR__ . '/../includes/header.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require_once __DIR__ . '/../config/paths.php';
-require_once __DIR__ . '/../config/db.php';
-
-// Function to ensure category images exist
-function ensure_category_images() {
-    $categories_dir = __DIR__ . '/../assets/images/categories';
-    if (!file_exists($categories_dir)) {
-        mkdir($categories_dir, 0755, true);
-    }
-
-    // Default category images (placeholder images for each category)
-    $default_images = [
-        'jewelry' => 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338',
-        'pottery' => 'https://images.unsplash.com/photo-1493106641515-6b5631de4bb9',
-        'textile' => 'https://images.unsplash.com/photo-1544441893-675973e31985',
-        'wood-crafts' => 'https://images.unsplash.com/photo-1611486212557-88be5ff6f941',
-        'art' => 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5'
-    ];
-
-    foreach ($default_images as $category => $image_url) {
-        $image_path = $categories_dir . '/' . $category . '.jpg';
-        if (!file_exists($image_path)) {
-            // Create a placeholder image
-            $placeholder = imagecreatetruecolor(800, 600);
-            $bg_color = imagecolorallocate($placeholder, 240, 240, 240);
-            imagefill($placeholder, 0, 0, $bg_color);
-            
-            // Add text to the placeholder
-            $text_color = imagecolorallocate($placeholder, 100, 100, 100);
-            $text = ucfirst($category);
-            $font_size = 5;
-            $font = __DIR__ . '/../assets/fonts/arial.ttf';
-            
-            // If we have GD with FreeType support, use fancy text
-            if (function_exists('imagettftext') && file_exists($font)) {
-                imagettftext($placeholder, 30, 0, 300, 300, $text_color, $font, $text);
-            } else {
-                // Fallback to basic text
-                imagestring($placeholder, $font_size, 350, 280, $text, $text_color);
-            }
-            
-            // Save the image
-            imagejpeg($placeholder, $image_path, 90);
-            imagedestroy($placeholder);
-            
-            error_log("Created placeholder image for category: " . $category);
-        }
-    }
-}
-
-// Ensure category images exist
-ensure_category_images();
-
 // Set default values in case database connection fails
 $products_result = null;
 $products_available = false;
@@ -67,6 +14,8 @@ $db_error = null;
 
 // Only attempt database operations if it's needed
 try {
+    require_once __DIR__ . '/../config/db.php';
+    
     // Debug database connection
     if (!$conn || $conn->connect_error) {
         throw new Exception("Database connection failed: " . ($conn ? $conn->connect_error : "Connection not established"));
@@ -144,7 +93,7 @@ $predefined_categories = [
                 ?>
                 <div class="product-card">
                     <img src="<?php echo asset_url('assets/images/' . ($product['image'] ?? 'placeholder.jpg')); ?>" 
-                         alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                         alt="<?php echo htmlspecialchars($product['name'] ?? 'Product'); ?>" 
                          class="product-image"
                          onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
                     <div class="product-info">
@@ -178,8 +127,7 @@ $predefined_categories = [
                     <img src="<?php echo asset_url('assets/images/categories/' . $image_name); ?>" 
                          alt="<?php echo $cat_name; ?>" 
                          class="category-image"
-                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'"
-                         loading="lazy">
+                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
                     <h3><?php echo $cat_name; ?></h3>
                     <a href="<?php echo url('/category.php?name=' . urlencode($cat_name)); ?>" class="btn btn-secondary">Explore</a>
                 </div>
@@ -194,8 +142,7 @@ $predefined_categories = [
                     <img src="<?php echo asset_url('assets/images/categories/' . $image_name); ?>" 
                          alt="<?php echo $cat_name; ?>" 
                          class="category-image"
-                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'"
-                         loading="lazy">
+                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
                     <h3><?php echo $cat_name; ?></h3>
                     <a href="<?php echo url('/category.php?name=' . urlencode($cat_name)); ?>" class="btn btn-secondary">Explore</a>
                 </div>
