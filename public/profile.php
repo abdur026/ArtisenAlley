@@ -19,11 +19,18 @@ if (!isset($_SESSION['user_id'])) {
 
 try {
     $user_id = $_SESSION['user_id'];
-    $stmt = $conn->prepare("SELECT username, first_name, last_name, email, profile_image FROM users WHERE id = ?");
-    if (!$stmt) {
-        throw new Exception("Prepare failed: " . $conn->error);
+    $stmt = $conn->prepare("SHOW COLUMNS FROM users LIKE 'name'");
+    $stmt->execute();
+    $has_name_column = ($stmt->get_result()->num_rows > 0);
+
+    if ($has_name_column) {
+        // Using single name field
+        $stmt = $conn->prepare("SELECT name, email, profile_image FROM users WHERE id = ?");
+    } else {
+        // Using first_name and last_name fields
+        $stmt = $conn->prepare("SELECT first_name, last_name, email, profile_image FROM users WHERE id = ?");
     }
-    
+
     $stmt->bind_param("i", $user_id);
     if (!$stmt->execute()) {
         throw new Exception("Execute failed: " . $stmt->error);
@@ -36,8 +43,10 @@ try {
         throw new Exception("User not found in database");
     }
 
-    // Combine first and last name for display
-    $user['name'] = $user['first_name'] . ' ' . $user['last_name'];
+    // Combine name fields if using first_name/last_name
+    if (!$has_name_column && isset($user['first_name']) && isset($user['last_name'])) {
+        $user['name'] = $user['first_name'] . ' ' . $user['last_name'];
+    }
 
     if (!$user['profile_image']) {
         $user['profile_image'] = 'default-avatar.jpg';
@@ -223,20 +232,200 @@ try {
             object-fit: cover;
         }
 
+        .upload-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--light-gray);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .update-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .update-button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
         .alert {
             padding: 1rem 1.5rem;
             border-radius: 10px;
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            gap: 0.75rem;
         }
 
-        .alert i {
-            margin-right: 1rem;
-            font-size: 1.5rem;
+        .alert-success {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .review-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .review-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .review-product {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .review-product img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .product-info h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+
+        .rating {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .rating .fas.fa-star.filled {
+            color: #f1c40f;
+        }
+
+        .rating .fas.fa-star {
+            color: #e0e0e0;
+        }
+
+        .review-text {
+            color: #666;
+            line-height: 1.6;
+            margin: 1rem 0;
+        }
+
+        .review-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .review-date {
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .view-product {
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .view-product:hover {
+            color: var(--secondary-color);
+        }
+
+        .no-reviews {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .no-reviews i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .no-reviews p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .browse-products {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .browse-products:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .view-all-reviews {
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .view-all-reviews:hover {
+            color: var(--secondary-color);
         }
     </style>
 </head>
@@ -244,14 +433,27 @@ try {
     <?php include __DIR__ . '/../includes/header.php'; ?>
 
     <div class="profile-container">
+        <?php
+        // Generate breadcrumbs
+        $breadcrumbs = [
+            ['name' => 'Home', 'url' => url('/index.php')],
+            ['name' => 'Profile']
+        ];
+        echo generate_breadcrumbs($breadcrumbs);
+        ?>
+        
         <div class="profile-header">
-            <?php if (isset($user) && $user): ?>
-                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" alt="Profile Picture" class="profile-avatar">
-                <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
-                <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
+            <?php if ($profile_image_data): ?>
+                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
+                     alt="Profile Picture" 
+                     class="profile-avatar">
             <?php else: ?>
-                <p class="error">User information could not be retrieved.</p>
+                <img src="<?php echo asset_url('assets/images/default-avatar.png'); ?>" 
+                     alt="Profile Picture" 
+                     class="profile-avatar">
             <?php endif; ?>
+            <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
+            <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
         </div>
 
         <div class="profile-content">
@@ -259,27 +461,38 @@ try {
                 <ul class="profile-menu">
                     <li>
                         <a href="#profile-info">
-                            <i class="fas fa-user"></i> Profile Info
+                            <i class="fas fa-user"></i>
+                            Profile Information
                         </a>
                     </li>
                     <li>
-                        <a href="<?php echo url('orders.php'); ?>">
-                            <i class="fas fa-shopping-bag"></i> My Orders
+                        <a href="<?php echo url('/orders.php'); ?>">
+                            <i class="fas fa-shopping-bag"></i>
+                            My Orders
                         </a>
                     </li>
                     <li>
-                        <a href="<?php echo url('wishlist.php'); ?>">
-                            <i class="fas fa-heart"></i> Wishlist
+                        <a href="<?php echo url('/wishlist.php'); ?>">
+                            <i class="fas fa-heart"></i>
+                            Wishlist
                         </a>
                     </li>
                     <li>
-                        <a href="<?php echo url('reviews.php'); ?>">
-                            <i class="fas fa-star"></i> Community Reviews
+                        <a href="<?php echo url('/reviews.php'); ?>">
+                            <i class="fas fa-star"></i>
+                            Community Reviews
                         </a>
                     </li>
                     <li>
-                        <a href="<?php echo url('settings.php'); ?>">
-                            <i class="fas fa-cog"></i> Settings
+                        <a href="#my-reviews">
+                            <i class="fas fa-comment"></i>
+                            My Reviews
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?php echo url('/settings.php'); ?>">
+                            <i class="fas fa-cog"></i>
+                            Settings
                         </a>
                     </li>
                 </ul>
@@ -293,56 +506,69 @@ try {
                     </div>
                 <?php endif; ?>
 
+                <?php if (isset($_SESSION['success'])): ?>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+                    </div>
+                <?php endif; ?>
+
                 <section id="profile-info">
                     <h2 class="section-title">Profile Information</h2>
-                    <?php if (isset($user) && $user): ?>
-                        <form action="<?php echo url('update_profile.php'); ?>" method="POST" enctype="multipart/form-data">
-                            <div class="image-upload">
-                                <?php if ($profile_image_data): ?>
-                                    <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
-                                         alt="Current Profile Picture" 
-                                         class="current-image">
-                                <?php else: ?>
-                                    <img src="<?php echo asset_url('assets/images/default-avatar.png'); ?>" 
-                                         alt="Current Profile Picture" 
-                                         class="current-image">
-                                <?php endif; ?>
-                                <input type="file" name="profile_image" id="profile_image">
-                            </div>
+                    <form action="<?php echo url('/update_profile.php'); ?>" method="POST" enctype="multipart/form-data">
+                        <div class="image-upload">
+                            <?php if ($profile_image_data): ?>
+                                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
+                                     alt="Current Profile Picture" 
+                                     class="current-image">
+                            <?php else: ?>
+                                <img src="<?php echo asset_url('assets/images/default-avatar.png'); ?>" 
+                                     alt="Current Profile Picture" 
+                                     class="current-image">
+                            <?php endif; ?>
+                            <label class="upload-button">
+                                <i class="fas fa-camera"></i>
+                                Change Photo
+                                <input type="file" id="profile_image" name="profile_image" style="display: none;" accept="image/*">
+                            </label>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="first_name">First Name</label>
-                                <input type="text" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" required>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="last_name">Last Name</label>
-                                <input type="text" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="email">Email Address</label>
-                                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">Update Profile</button>
-                        </form>
-                    <?php else: ?>
-                        <p>User information could not be retrieved.</p>
-                    <?php endif; ?>
+                        <button type="submit" class="update-button">
+                            <i class="fas fa-save"></i>
+                            Update Profile
+                        </button>
+                    </form>
                 </section>
 
                 <section id="my-reviews" class="profile-section">
                     <h2 class="section-title">
                         My Reviews
-                        <a href="<?php echo url('reviews.php'); ?>" class="view-all-reviews">View All Community Reviews</a>
+                        <a href="<?php echo url('/reviews.php'); ?>" class="view-all-reviews">View All Community Reviews</a>
                     </h2>
                     <div class="reviews-grid">
                         <?php
-                        // Example reviews loop
-                        $reviews = [];
-                        if (!empty($reviews)):
-                            foreach ($reviews as $review):
+                        $reviews_query = "SELECT r.*, p.name as product_name, p.image as product_image 
+                                        FROM reviews r 
+                                        JOIN products p ON r.product_id = p.id 
+                                        WHERE r.user_id = ? 
+                                        ORDER BY r.created_at DESC";
+                        $stmt = $conn->prepare($reviews_query);
+                        $stmt->bind_param("i", $user_id);
+                        $stmt->execute();
+                        $reviews_result = $stmt->get_result();
+
+                        if ($reviews_result->num_rows > 0):
+                            while($review = $reviews_result->fetch_assoc()):
                         ?>
                             <div class="review-card">
                                 <div class="review-product">
@@ -353,31 +579,31 @@ try {
                                     <div class="product-info">
                                         <h3><?php echo htmlspecialchars($review['product_name']); ?></h3>
                                         <div class="rating">
-                                            <?php for ($i = 0; $i < 5; $i++): ?>
-                                                <i class="fas fa-star<?php echo $i < $review['rating'] ? '' : '-o'; ?>"></i>
+                                            <?php for($i = 1; $i <= 5; $i++): ?>
+                                                <i class="fas fa-star <?php echo $i <= $review['rating'] ? 'filled' : ''; ?>"></i>
                                             <?php endfor; ?>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="review-content">
-                                    <p><?php echo htmlspecialchars($review['content']); ?></p>
+                                <p class="review-text"><?php echo htmlspecialchars($review['comment']); ?></p>
+                                <div class="review-meta">
                                     <span class="review-date">
                                         <i class="fas fa-calendar"></i>
                                         <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
                                     </span>
-                                    <a href="<?php echo url('product.php?id=' . $review['product_id']); ?>" class="view-product">
+                                    <a href="<?php echo url('/product.php?id=' . $review['product_id']); ?>" class="view-product">
                                         View Product <i class="fas fa-arrow-right"></i>
                                     </a>
                                 </div>
                             </div>
-                        <?php
-                            endforeach;
+                        <?php 
+                            endwhile;
                         else:
                         ?>
                             <div class="no-reviews">
                                 <i class="fas fa-comment-alt"></i>
                                 <p>You haven't written any reviews yet.</p>
-                                <a href="<?php echo url('index.php'); ?>" class="browse-products">Browse Products</a>
+                                <a href="<?php echo url('/index.php'); ?>" class="browse-products">Browse Products</a>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -387,5 +613,31 @@ try {
     </div>
 
     <?php include __DIR__ . '/../includes/footer.php'; ?>
+
+    <script>
+        document.getElementById('profile_image').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.querySelector('.current-image').src = e.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        // Add smooth scrolling to section links
+        document.querySelectorAll('.profile-menu a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const section = document.querySelector(this.getAttribute('href'));
+                if (section) {
+                    section.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
