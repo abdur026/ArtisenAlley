@@ -27,7 +27,7 @@ function calculateAverageRating($reviews) {
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 
-$stmt = $conn->prepare("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.id = ?");
+$stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->bind_param("i", $product_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -471,10 +471,10 @@ if (isset($_SESSION['debug'])) {
     <div class="product-container">
         <?php
         // Generate breadcrumbs
-        $category_url = !empty($product['category_name']) ? url('/search.php?category=' . urlencode($product['category_name'])) : url('/search.php');
+        $category_url = url('/search.php');
         $breadcrumbs = [
             ['name' => 'Home', 'url' => url('/index.php')],
-            ['name' => $product['category_name'] ?? 'All Products', 'url' => $category_url],
+            ['name' => 'All Products', 'url' => $category_url],
             ['name' => $product['name']]
         ];
         echo generate_breadcrumbs($breadcrumbs);
@@ -488,7 +488,7 @@ if (isset($_SESSION['debug'])) {
             
             <div class="product-info">
                 <div class="product-category">
-                    <i class="fas fa-tag"></i> <?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized'); ?>
+                    <i class="fas fa-tag"></i> All Products
                 </div>
                 <h1 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h1>
                 <div class="product-price">$<?php echo number_format($product['price'], 2); ?></div>
