@@ -12,18 +12,13 @@ require_once __DIR__ . '/../config/paths.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/breadcrumb.php';
 
-// Log session data for debugging
-error_log('Session Data: ' . print_r($_SESSION, true));
-
 if (!isset($_SESSION['user_id'])) {
-    error_log('User ID not set in session, redirecting to login');
     header("Location: " . url('/login.php'));
     exit;
 }
 
 try {
     $user_id = $_SESSION['user_id'];
-    error_log('Fetching profile for User ID: ' . $user_id);
     $stmt = $conn->prepare("SELECT username, first_name, last_name, email, profile_image FROM users WHERE id = ?");
     if (!$stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
@@ -56,10 +51,9 @@ try {
         }
     }
 } catch (Exception $e) {
-    error_log('Error fetching user profile: ' . $e->getMessage());
-    $_SESSION['error'] = 'User information could not be retrieved.';
-    header("Location: " . url('/login.php'));
-    exit;
+    $error = "Error: " . $e->getMessage();
+    // Log the error
+    error_log("Profile error: " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
