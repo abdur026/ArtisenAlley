@@ -1,5 +1,8 @@
 <?php
 session_start();
+
+// Set Content Security Policy header
+header("Content-Security-Policy: default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:;");
 require_once '../config/db.php';
 require_once '../includes/breadcrumb.php';
 
@@ -73,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Your Shopping Cart - Artisan Alley</title>
     <link rel="stylesheet" href="<?php echo url('/src/main.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -383,9 +387,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $grandTotal += $total;
                 ?>
                     <div class="cart-item">
-                        <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
-                             alt="<?php echo htmlspecialchars($product['name']); ?>"
-                             onerror="this.src='assets/images/placeholder.jpg'">
+                        <img src="<?php echo url('/assets/images/' . htmlspecialchars($product['image'] ?? '')); ?>" 
+                             alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>"
+                             onerror="this.src='<?php echo url('/assets/images/placeholder.jpg'); ?>'">
                         <div class="product-name"><?php echo htmlspecialchars($product['name']); ?></div>
                         <div class="quantity-controls">
                             <form method="POST" action="cart.php" style="display: flex; gap: 0.5rem; align-items: center;">
