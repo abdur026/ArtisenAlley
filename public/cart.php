@@ -7,7 +7,11 @@ require_once '../includes/breadcrumb.php';
 // Initialize the cart if it doesn't exist
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
+    error_log("Cart initialized: empty array created in session");
 }
+
+// Direct debug - always log cart contents
+error_log("Current cart contents: " . json_encode($_SESSION['cart']));
 
 // Check if this is an AJAX request
 $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
@@ -16,6 +20,9 @@ $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTT
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add') {
     $product_id = intval($_POST['product_id']);
     $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+    
+    // Debug the product ID and quantity
+    error_log("Adding to cart - Product ID: $product_id, Quantity: $quantity");
     
     // Ensure quantity is at least 1
     if ($quantity < 1) {
@@ -28,6 +35,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } else {
         $_SESSION['cart'][$product_id] = $quantity;
     }
+    
+    // Debug cart contents after adding
+    error_log("Cart after adding product - Contents: " . json_encode($_SESSION['cart']));
+    
+    // Force session write
+    session_write_close();
+    session_start();
+    
+    // Verify cart update after restart
+    error_log("Cart after session restart - Contents: " . json_encode($_SESSION['cart']));
     
     // Return JSON response for AJAX requests
     if ($is_ajax) {
@@ -66,11 +83,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'debug_reset':
                 // Clear the cart
                 $_SESSION['cart'] = [];
+                error_log("Debug: Cart reset");
                 
                 // Add a test product - Use ID 1 for simplicity
                 $_SESSION['cart'][1] = 1;
+                error_log("Debug: Test product added to cart. Cart now contains: " . json_encode($_SESSION['cart']));
                 
-                error_log("Debug: Cart reset and test product added");
+                // Force session write
+                session_write_close();
+                session_start();
+                
+                // Verify the cart was updated
+                error_log("Debug: After session restart, cart contains: " . json_encode($_SESSION['cart']));
+                break;
+                
+            case 'add_samples':
+                // Add multiple sample products to the cart
+                $_SESSION['cart'] = [
+                    1 => 1,  // Product ID 1, quantity 1
+                    2 => 2,  // Product ID 2, quantity 2
+                    3 => 1   // Product ID 3, quantity 1
+                ];
+                error_log("Debug: Sample products added to cart. Cart now contains: " . json_encode($_SESSION['cart']));
+                
+                // Force session write
+                session_write_close();
+                session_start();
                 break;
         }
     }
@@ -483,7 +521,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>$<?php echo number_format($grandTotal, 2); ?></span>
                 </div>
                 
-                <?php if ($grandTotal == 0): ?>
+                <?php if ($grandTotal == 0 || empty($_SESSION['cart'])): ?>
                 <div style="padding: 1rem; margin-top: 1rem; background-color: #fff3cd; color: #856404; border-left: 4px solid #ffeeba;">
                     <p><strong>Debug Info:</strong> The total is still $0.00. This may indicate an issue with product prices in the database.</p>
                     
@@ -521,6 +559,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         } else {
                             echo "<p>Could not get schema information.</p>";
                         }
+                        
+                        // Direct check using raw query
+                        echo "<p><strong>Direct database value check:</strong></p>";
+                        $raw_query = $conn->query("SELECT id, name, price, CAST(price AS DECIMAL(10,2)) as price_decimal, CAST(price AS CHAR) as price_string FROM products WHERE id = 1");
+                        if ($raw_query && $raw_query->num_rows > 0) {
+                            $raw_product = $raw_query->fetch_assoc();
+                            echo "<p>Raw price value: " . var_export($raw_product['price'], true) . " (type: " . gettype($raw_product['price']) . ")</p>";
+                            echo "<p>Cast to decimal: " . var_export($raw_product['price_decimal'], true) . " (type: " . gettype($raw_product['price_decimal']) . ")</p>";
+                            echo "<p>Cast to string: " . var_export($raw_product['price_string'], true) . " (type: " . gettype($raw_product['price_string']) . ")</p>";
+                            
+                            // Direct calculation test
+                            $test_quantity = 2;
+                            $test_total = floatval($raw_product['price']) * $test_quantity;
+                            echo "<p>Test calculation: {$raw_product['price']} × {$test_quantity} = {$test_total}</p>";
+                        } else {
+                            echo "<p>Could not retrieve raw database values.</p>";
+                        }
                     } catch (Exception $e) {
                         echo "<p>Error during test: " . htmlspecialchars($e->getMessage()) . "</p>";
                     }
@@ -530,6 +585,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="hidden" name="action" value="debug_reset">
                         <button type="submit" style="padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
                             Debug: Reset Cart & Add Test Product
+                        </button>
+                    </form>
+                    
+                    <form method="POST" style="margin-top: 1rem;">
+                        <input type="hidden" name="action" value="add">
+                        <input type="hidden" name="product_id" value="1">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" style="padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Direct Add: Product ID 1
+                        </button>
+                    </form>
+                    
+                    <form method="POST" style="margin-top: 1rem;">
+                        <input type="hidden" name="action" value="add_samples">
+                        <button type="submit" style="padding: 10px 15px; background-color: #6610f2; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Add Multiple Sample Products
                         </button>
                     </form>
                 </div>
