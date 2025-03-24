@@ -18,68 +18,36 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    // Debug session data
-    error_log('Session data: ' . print_r($_SESSION, true));
-    
-    if (!isset($_SESSION['user_id'])) {
-        throw new Exception('User not logged in');
-    }
-    
     $user_id = $_SESSION['user_id'];
-    error_log('Fetching user data for ID: ' . $user_id);
-    
-    // Check database connection
-    if (!$conn || $conn->connect_error) {
-        error_log('Database connection error: ' . ($conn ? $conn->connect_error : 'No connection'));
-        throw new Exception('Database connection failed');
-    }
-    
-    // Prepare and execute query
-    $stmt = $conn->prepare("SELECT id, username, first_name, last_name, email, profile_image FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT username, first_name, last_name, email, profile_image FROM users WHERE id = ?");
     if (!$stmt) {
-        error_log('Prepare failed: ' . $conn->error);
-        throw new Exception('Failed to prepare statement');
+        throw new Exception("Prepare failed: " . $conn->error);
     }
     
-    $stmt->bind_param('i', $user_id);
+    $stmt->bind_param("i", $user_id);
     if (!$stmt->execute()) {
-        error_log('Execute failed: ' . $stmt->error);
-        throw new Exception('Failed to execute query');
+        throw new Exception("Execute failed: " . $stmt->error);
     }
     
     $result = $stmt->get_result();
-    if (!$result) {
-        error_log('Get result failed: ' . $stmt->error);
-        throw new Exception('Failed to get query result');
-    }
-    
     $user = $result->fetch_assoc();
+    
     if (!$user) {
-        error_log('No user found for ID: ' . $user_id);
-        throw new Exception('User not found');
+        throw new Exception("User not found in database");
     }
-    
-    error_log('User data retrieved: ' . print_r($user, true));
-    
+
     // Combine first and last name for display
-    $user['name'] = trim($user['first_name'] . ' ' . $user['last_name']);
-    
-    // Handle profile image
-    if (empty($user['profile_image'])) {
-        error_log('No profile image set, using default');
+    $user['name'] = $user['first_name'] . ' ' . $user['last_name'];
+
+    if (!$user['profile_image']) {
         $user['profile_image'] = 'default-avatar.jpg';
-        $profile_image_data = base64_encode(file_get_contents(__DIR__ . '/../assets/images/default-avatar.jpg'));
+        $profile_image_data = null;
     } else {
-        $image_path = __DIR__ . '/../uploads/' . $user['profile_image'];
-        error_log('Checking for profile image at: ' . $image_path);
-        
+        $image_path = __DIR__ . "/../uploads/" . $user['profile_image'];
         if (file_exists($image_path)) {
-            error_log('Loading profile image from: ' . $image_path);
             $profile_image_data = base64_encode(file_get_contents($image_path));
         } else {
-            error_log('Profile image not found at: ' . $image_path . ', using default');
-            $user['profile_image'] = 'default-avatar.jpg';
-            $profile_image_data = base64_encode(file_get_contents(__DIR__ . '/../assets/images/default-avatar.jpg'));
+            $profile_image_data = null;
         }
     }
 } catch (Exception $e) {
@@ -196,41 +164,6 @@ try {
             text-align: center;
         }
 
-        .alert {
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 8px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .alert i {
-            font-size: 1.2rem;
-        }
-
-        .alert-error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .alert-success {
-            background-color: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-
-        .error {
-            color: #991b1b;
-            font-weight: 500;
-            margin: 1rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
         .profile-main {
             background: white;
             border-radius: 15px;
@@ -317,18 +250,7 @@ try {
                 <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
                 <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
             <?php else: ?>
-                <?php if (isset($_SESSION['error'])): ?>
-                    <div class="alert alert-error">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <?php 
-                            echo htmlspecialchars($_SESSION['error']); 
-                            error_log('Displaying error: ' . $_SESSION['error']);
-                            unset($_SESSION['error']); 
-                        ?>
-                    </div>
-                <?php else: ?>
-                    <p class="error">User information could not be retrieved.</p>
-                <?php endif; ?>
+                <p class="error">User information could not be retrieved.</p>
             <?php endif; ?>
         </div>
 

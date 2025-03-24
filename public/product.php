@@ -210,26 +210,6 @@ if (isset($_SESSION['debug'])) {
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
-        .alert {
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            animation: fadeOut 5s forwards;
-            animation-delay: 3s;
-        }
-
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-
         .product-meta {
             margin-top: 2rem;
             padding-top: 2rem;
@@ -509,14 +489,6 @@ if (isset($_SESSION['debug'])) {
                  class="product-image">
             
             <div class="product-info">
-                <?php if (isset($_SESSION['success_message'])): ?>
-                    <div class="alert alert-success">
-                        <?php 
-                        echo htmlspecialchars($_SESSION['success_message']); 
-                        unset($_SESSION['success_message']);
-                        ?>
-                    </div>
-                <?php endif; ?>
                 <div class="product-category">
                     <i class="fas fa-tag"></i> All Products
                 </div>

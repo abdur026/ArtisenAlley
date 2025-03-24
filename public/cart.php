@@ -21,9 +21,6 @@ error_log('Database connection successful');
 // Initialize the cart if it doesn't exist
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
-    error_log('Cart initialized as empty array');
-} else {
-    error_log('Current cart contents: ' . print_r($_SESSION['cart'], true));
 }
 
 // Check if this is an AJAX request
@@ -31,16 +28,6 @@ $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTT
 
 // Handle add to cart action
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add') {
-    error_log('Received add to cart request');
-    error_log('POST data: ' . print_r($_POST, true));
-    
-    if (!isset($_POST['product_id'])) {
-        error_log('Error: product_id not set in POST data');
-        $_SESSION['error_message'] = 'Error: Missing product ID';
-        header('Location: ' . url('/index.php'));
-        exit;
-    }
-    
     $product_id = intval($_POST['product_id']);
     $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
     
@@ -49,30 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $quantity = 1;
     }
     
-    // Verify product exists in database
-    $stmt = $conn->prepare('SELECT id, name, price FROM products WHERE id = ?');
-    $stmt->bind_param('i', $product_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        error_log('Error: Product not found in database: ' . $product_id);
-        $_SESSION['error_message'] = 'Error: Product not found';
-        header('Location: ' . url('/index.php'));
-        exit;
-    }
-    
-    $product = $result->fetch_assoc();
-    error_log('Found product: ' . print_r($product, true));
-    
     // Add to cart
     if (isset($_SESSION['cart'][$product_id])) {
         $_SESSION['cart'][$product_id] += $quantity;
     } else {
         $_SESSION['cart'][$product_id] = $quantity;
     }
-    
-    error_log('Updated cart contents: ' . print_r($_SESSION['cart'], true));
     
     // Return JSON response for AJAX requests
     if ($is_ajax) {
@@ -85,9 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit;
     }
     
-    // Redirect back to product page
-    $_SESSION['success_message'] = 'Item added to cart successfully!';
-    header('Location: ' . url('/product.php?id=' . $product_id));
+    // Redirect for non-AJAX requests
+    header("Location: product.php?id=$product_id&success=1");
     exit;
 }
 
@@ -326,19 +294,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
-        .alert {
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
         .continue-shopping {
             display: inline-block;
             padding: 1rem 2rem;
@@ -417,12 +372,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ?>
         <div class="cart-header">
             <h1><i class="fas fa-shopping-cart"></i> Your Shopping Cart</h1>
-            <?php if (isset($_SESSION['cart_message'])): ?>
-                <div class="alert alert-success">
-                    <?php echo htmlspecialchars($_SESSION['cart_message']); ?>
-                    <?php unset($_SESSION['cart_message']); ?>
-                </div>
-            <?php endif; ?>
         </div>
 
         <?php 
