@@ -1,8 +1,15 @@
 <?php
 session_start();
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 require_once '../config/db.php';
 require_once '../config/paths.php';
 require_once '../includes/breadcrumb.php';
+
+// Debug session
+error_log('Session ID: ' . session_id());
+error_log('Session data: ' . print_r($_SESSION, true));
 
 // Check database connection
 if ($conn->connect_error) {
@@ -29,12 +36,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $quantity = 1;
     }
     
+    error_log('Adding to cart - Product ID: ' . $product_id . ', Quantity: ' . $quantity);
+    
     // Add to cart
     if (isset($_SESSION['cart'][$product_id])) {
         $_SESSION['cart'][$product_id] += $quantity;
     } else {
         $_SESSION['cart'][$product_id] = $quantity;
     }
+    
+    error_log('Cart after adding: ' . print_r($_SESSION['cart'], true));
     
     // Return JSON response for AJAX requests
     if ($is_ajax) {
@@ -48,7 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     
     // Redirect for non-AJAX requests
-    header("Location: product.php?id=$product_id&success=1");
+    $_SESSION['cart_message'] = 'Item added to cart successfully!';
+    header('Location: ' . url('/cart.php'));
     exit;
 }
 
@@ -287,6 +299,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
+        .alert {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
         .continue-shopping {
             display: inline-block;
             padding: 1rem 2rem;
@@ -365,14 +390,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ?>
         <div class="cart-header">
             <h1><i class="fas fa-shopping-cart"></i> Your Shopping Cart</h1>
+            <?php if (isset($_SESSION['cart_message'])): ?>
+                <div class="alert alert-success">
+                    <?php echo htmlspecialchars($_SESSION['cart_message']); ?>
+                    <?php unset($_SESSION['cart_message']); ?>
+                </div>
+            <?php endif; ?>
         </div>
 
-        <?php if (empty($_SESSION['cart'])): ?>
+        <?php 
+        // Debug cart state
+        error_log('Cart state check - isset: ' . isset($_SESSION['cart']) . ', empty: ' . (empty($_SESSION['cart']) ? 'true' : 'false'));
+        if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])): ?>
             <div class="cart-empty">
                 <i class="fas fa-shopping-basket"></i>
                 <h2>Your cart is empty</h2>
                 <p>Looks like you haven't added any items to your cart yet.</p>
-                <a href="/public/index.php" class="continue-shopping">
+                <a href="<?php echo url('/index.php'); ?>" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
             </div>
