@@ -19,29 +19,81 @@ if (!isset($_SESSION['user_id'])) {
 
 try {
     $user_id = $_SESSION['user_id'];
+    error_log("Fetching profile for user ID: $user_id");
+    
+    // Debug connection
+    if (!$conn) {
+        error_log("Database connection is null");
+        throw new Exception("Database connection failed");
+    }
+    
+    // Check if users table exists
+    $tables_result = $conn->query("SHOW TABLES LIKE 'users'");
+    if (!$tables_result || $tables_result->num_rows === 0) {
+        error_log("Users table not found in database");
+        throw new Exception("Users table not found");
+    }
+    
     $stmt = $conn->prepare("SHOW COLUMNS FROM users LIKE 'name'");
+    if (!$stmt) {
+        error_log("Error preparing SHOW COLUMNS query: " . $conn->error);
+        throw new Exception("Failed to check column structure: " . $conn->error);
+    }
+    
     $stmt->execute();
     $has_name_column = ($stmt->get_result()->num_rows > 0);
+    error_log("Users table has 'name' column: " . ($has_name_column ? 'Yes' : 'No'));
 
+    // Debug available columns
+    $columns_result = $conn->query("SHOW COLUMNS FROM users");
+    $columns = [];
+    while ($column = $columns_result->fetch_assoc()) {
+        $columns[] = $column['Field'];
+    }
+    error_log("Available columns in users table: " . implode(", ", $columns));
+    
     if ($has_name_column) {
         // Using single name field
-        $stmt = $conn->prepare("SELECT name, email, profile_image FROM users WHERE id = ?");
+        $stmt = $conn->prepare("SELECT id, name, email, profile_image FROM users WHERE id = ?");
     } else {
         // Using first_name and last_name fields
-        $stmt = $conn->prepare("SELECT first_name, last_name, email, profile_image FROM users WHERE id = ?");
+        $stmt = $conn->prepare("SELECT id, first_name, last_name, email, profile_image FROM users WHERE id = ?");
     }
-
+    
+    if (!$stmt) {
+        error_log("Error preparing SELECT query: " . $conn->error);
+        throw new Exception("Failed to prepare user query: " . $conn->error);
+    }
+    
     $stmt->bind_param("i", $user_id);
+    
     if (!$stmt->execute()) {
+        error_log("Error executing query: " . $stmt->error);
         throw new Exception("Execute failed: " . $stmt->error);
     }
     
     $result = $stmt->get_result();
+    
+    if (!$result) {
+        error_log("Query result is null");
+        throw new Exception("Failed to get result from query");
+    }
+    
     $user = $result->fetch_assoc();
     
     if (!$user) {
-        throw new Exception("User not found in database");
+        // Try direct query to debug
+        $direct_result = $conn->query("SELECT * FROM users WHERE id = $user_id");
+        if ($direct_result && $direct_result->num_rows > 0) {
+            $user = $direct_result->fetch_assoc();
+            error_log("Direct query succeeded where prepared statement failed");
+        } else {
+            error_log("User with ID $user_id not found in database");
+            throw new Exception("User not found in database");
+        }
     }
+    
+    error_log("Found user data: " . json_encode($user));
 
     // Combine name fields if using first_name/last_name
     if (!$has_name_column && isset($user['first_name']) && isset($user['last_name'])) {
@@ -63,9 +115,7 @@ try {
     $error = "Error: " . $e->getMessage();
     // Log the error
     error_log("Profile error: " . $e->getMessage());
-    // Initialize variables to prevent undefined errors
-    $user = ['name' => 'User', 'email' => 'example@example.com', 'profile_image' => 'default-avatar.jpg'];
-    $profile_image_data = null;
+    // Don't set default user values anymore - let's show the error instead
 }
 ?>
 <!DOCTYPE html>
@@ -445,8 +495,20 @@ try {
         echo generate_breadcrumbs($breadcrumbs);
         ?>
         
+        <?php if (isset($error)): ?>
+        <div class="alert alert-error" style="margin-bottom: 2rem;">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+                <strong>There was a problem loading your profile:</strong>
+                <p><?php echo htmlspecialchars($error); ?></p>
+                <p>Please try logging out and logging back in. If the issue persists, contact support.</p>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <?php if (isset($user)): ?>
         <div class="profile-header">
-            <?php if ($profile_image_data): ?>
+            <?php if (isset($profile_image_data) && $profile_image_data): ?>
                 <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
                      alt="Profile Picture" 
                      class="profile-avatar">
@@ -455,8 +517,8 @@ try {
                      alt="Profile Picture" 
                      class="profile-avatar">
             <?php endif; ?>
-            <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
-            <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
+            <h1 class="profile-name"><?php echo htmlspecialchars($user['name'] ?? ''); ?></h1>
+            <p class="profile-email"><?php echo htmlspecialchars($user['email'] ?? ''); ?></p>
         </div>
 
         <div class="profile-content">
@@ -520,7 +582,7 @@ try {
                     <h2 class="section-title">Profile Information</h2>
                     <form action="<?php echo url('/update_profile.php'); ?>" method="POST" enctype="multipart/form-data">
                         <div class="image-upload">
-                            <?php if ($profile_image_data): ?>
+                            <?php if (isset($profile_image_data) && $profile_image_data): ?>
                                 <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
                                      alt="Current Profile Picture" 
                                      class="current-image">
@@ -538,12 +600,12 @@ try {
 
                         <div class="form-group">
                             <label for="name">Full Name</label>
-                            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" required>
+                            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" required>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Email Address</label>
-                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
+                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" readonly>
                         </div>
 
                         <button type="submit" class="update-button">
@@ -560,32 +622,78 @@ try {
                     </h2>
                     <div class="reviews-grid">
                         <?php
-                        // First check the column name in the products table
-                        $check_image_column = $conn->query("SHOW COLUMNS FROM products LIKE 'image'");
-                        $image_column_name = ($check_image_column && $check_image_column->num_rows > 0) ? 'image' : 'image_url';
-                        
-                        // Use the correct column name in the query
-                        $reviews_query = "SELECT r.*, p.name as product_name, p.{$image_column_name} as product_image 
-                                        FROM reviews r 
-                                        JOIN products p ON r.product_id = p.id 
-                                        WHERE r.user_id = ? 
-                                        ORDER BY r.created_at DESC";
-                        
                         try {
+                            // Check if reviews table exists
+                            $reviews_table_check = $conn->query("SHOW TABLES LIKE 'reviews'");
+                            if (!$reviews_table_check || $reviews_table_check->num_rows === 0) {
+                                throw new Exception("Reviews table not found");
+                            }
+                            
+                            // Check if products table exists
+                            $products_table_check = $conn->query("SHOW TABLES LIKE 'products'");
+                            if (!$products_table_check || $products_table_check->num_rows === 0) {
+                                throw new Exception("Products table not found");
+                            }
+                            
+                            // Get column names for products table
+                            $product_columns_result = $conn->query("SHOW COLUMNS FROM products");
+                            $product_columns = [];
+                            while ($column = $product_columns_result->fetch_assoc()) {
+                                $product_columns[] = $column['Field'];
+                            }
+                            error_log("Product table columns: " . implode(", ", $product_columns));
+                            
+                            // Check for image column
+                            $has_image = in_array('image', $product_columns);
+                            $has_image_url = in_array('image_url', $product_columns);
+                            
+                            // Get column names for reviews table
+                            $reviews_columns_result = $conn->query("SHOW COLUMNS FROM reviews");
+                            $reviews_columns = [];
+                            while ($column = $reviews_columns_result->fetch_assoc()) {
+                                $reviews_columns[] = $column['Field'];
+                            }
+                            error_log("Reviews table columns: " . implode(", ", $reviews_columns));
+                            
+                            // Check for comment/content column
+                            $comment_column = in_array('comment', $reviews_columns) ? 'comment' : 
+                                            (in_array('content', $reviews_columns) ? 'content' : 'comment');
+                            
+                            // Determine the image column to use
+                            $image_column = $has_image ? 'image' : ($has_image_url ? 'image_url' : null);
+                            
+                            if (!$image_column) {
+                                $image_part = '';
+                            } else {
+                                $image_part = ", p.{$image_column} as product_image";
+                            }
+                            
+                            // Build and execute the query
+                            $reviews_query = "SELECT r.*, p.name as product_name {$image_part}
+                                            FROM reviews r 
+                                            JOIN products p ON r.product_id = p.id 
+                                            WHERE r.user_id = ? 
+                                            ORDER BY r.created_at DESC";
+                                            
+                            error_log("Reviews query: $reviews_query");
+                            
                             $stmt = $conn->prepare($reviews_query);
                             if (!$stmt) {
                                 throw new Exception("Failed to prepare reviews query: " . $conn->error);
                             }
+                            
                             $stmt->bind_param("i", $user_id);
                             $stmt->execute();
                             $reviews_result = $stmt->get_result();
 
                             if ($reviews_result && $reviews_result->num_rows > 0):
                                 while($review = $reviews_result->fetch_assoc()):
+                                    $default_image = 'placeholder.jpg';
+                                    $product_image = $image_column ? ($review['product_image'] ?? $default_image) : $default_image;
                         ?>
                                 <div class="review-card">
                                     <div class="review-product">
-                                        <img src="<?php echo asset_url('assets/images/' . htmlspecialchars($review['product_image'] ?? 'placeholder.jpg')); ?>" 
+                                        <img src="<?php echo asset_url('assets/images/' . htmlspecialchars($product_image)); ?>" 
                                              alt="<?php echo htmlspecialchars($review['product_name'] ?? 'Product'); ?>"
                                              class="product-image"
                                              onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
@@ -598,7 +706,7 @@ try {
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="review-text"><?php echo htmlspecialchars($review['comment'] ?? ''); ?></p>
+                                    <p class="review-text"><?php echo htmlspecialchars($review[$comment_column] ?? ''); ?></p>
                                     <div class="review-meta">
                                         <span class="review-date">
                                             <i class="fas fa-calendar"></i>
@@ -626,6 +734,7 @@ try {
                             <div class="no-reviews">
                                 <i class="fas fa-exclamation-circle"></i>
                                 <p>We couldn't load your reviews at this time.</p>
+                                <p class="text-muted"><?php echo htmlspecialchars($e->getMessage()); ?></p>
                                 <a href="<?php echo url('/index.php'); ?>" class="browse-products">Browse Products</a>
                             </div>
                         <?php
@@ -635,6 +744,21 @@ try {
                 </section>
             </main>
         </div>
+        <?php else: ?>
+        <div class="alert alert-error" style="margin: 3rem auto; max-width: 600px; text-align: center;">
+            <i class="fas fa-user-slash" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <h2>Profile Unavailable</h2>
+            <p>We couldn't load your profile information at this time.</p>
+            <div style="margin-top: 1.5rem;">
+                <a href="<?php echo url('/logout.php'); ?>" class="update-button" style="margin-right: 1rem;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+                <a href="<?php echo url('/index.php'); ?>" class="browse-products">
+                    <i class="fas fa-home"></i> Go Home
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <?php include __DIR__ . '/../includes/footer.php'; ?>
