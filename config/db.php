@@ -1,9 +1,9 @@
 <?php
-// Database configuration
-$servername = "cosc360.ok.ubc.ca";
+// Simple database configuration
+$servername = "localhost";
 $username = "qrehman";
 $password = "qrehman";
-$dbname = "db_qrehman";
+$dbname = "qrehman";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);

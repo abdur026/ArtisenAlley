@@ -40,25 +40,14 @@ try {
     $user['name'] = $user['first_name'] . ' ' . $user['last_name'];
 
     if (!$user['profile_image']) {
-        $user['profile_image'] = 'default-profile.png';
-        $default_image_path = __DIR__ . "/../public/assets/images/default-profile.png";
-        if (file_exists($default_image_path)) {
-            $profile_image_data = base64_encode(file_get_contents($default_image_path));
-        } else {
-            $profile_image_data = null;
-        }
+        $user['profile_image'] = 'default-avatar.jpg';
+        $profile_image_data = null;
     } else {
-        $image_path = __DIR__ . "/../uploads/profile/" . $user['profile_image'];
+        $image_path = __DIR__ . "/../uploads/" . $user['profile_image'];
         if (file_exists($image_path)) {
             $profile_image_data = base64_encode(file_get_contents($image_path));
         } else {
-            // If profile image doesn't exist, use default
-            $default_image_path = __DIR__ . "/../public/assets/images/default-profile.png";
-            if (file_exists($default_image_path)) {
-                $profile_image_data = base64_encode(file_get_contents($default_image_path));
-            } else {
-                $profile_image_data = null;
-            }
+            $profile_image_data = null;
         }
     }
 } catch (Exception $e) {
@@ -255,18 +244,9 @@ try {
     <?php include __DIR__ . '/../includes/header.php'; ?>
 
     <div class="profile-container">
-        <?php if (isset($error)): ?>
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i>
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-
         <div class="profile-header">
             <?php if (isset($user) && $user): ?>
-                <img src="<?php echo $profile_image_data ? 'data:image/jpeg;base64,' . $profile_image_data : url('/assets/images/default-profile.png'); ?>" 
-                     alt="Profile Picture" 
-                     class="profile-avatar">
+                <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" alt="Profile Picture" class="profile-avatar">
                 <h1 class="profile-name"><?php echo htmlspecialchars($user['name']); ?></h1>
                 <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
             <?php else: ?>
