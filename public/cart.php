@@ -216,10 +216,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .cart-item {
             display: grid;
-            grid-template-columns: 100px 1fr auto auto;
-            align-items: start;
+            grid-template-columns: auto 2fr 1fr 1fr 1fr auto;
+            align-items: center;
             padding: 1.5rem;
-            gap: 2rem;
+            gap: 1.5rem;
             border-bottom: 1px solid #eee;
             transition: all 0.3s ease;
         }
@@ -229,42 +229,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .cart-item img {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             object-fit: cover;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 10px;
         }
 
-        .item-details h3 {
-            font-size: 1.2rem;
+        .product-name {
             font-weight: 600;
             color: #2c3e50;
-            margin: 0 0 0.5rem 0;
-        }
-
-        .price-each {
-            color: #666;
-            margin: 0.5rem 0;
-            font-size: 0.9rem;
-        }
-
-        .item-subtotal {
-            text-align: right;
-            min-width: 120px;
-        }
-
-        .subtotal-label {
-            color: #666;
-            margin: 0;
-            font-size: 0.9rem;
-        }
-
-        .subtotal-amount {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0.2rem 0 0 0;
         }
 
         .quantity-controls {
@@ -468,57 +441,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php
             $grandTotal = 0;
             error_log('Cart contents: ' . print_r($_SESSION['cart'], true));
-            
-            // Get product details
-            $products_by_id = array();
-            if (!empty($_SESSION['cart'])) {
-                foreach ($_SESSION['cart'] as $pid => $qty) {
-                    $stmt = $conn->prepare("SELECT id, name, price FROM products WHERE id = ?");
-                    $stmt->bind_param("i", $pid);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($product = $result->fetch_assoc()) {
-                        $products_by_id[$pid] = $product;
-                    }
-                }
-                error_log('Found products: ' . print_r($products_by_id, true));
-            }
             ?>
             <div class="cart-items">
                 <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
-                    if (isset($products_by_id[$product_id])):
-                        $product = $products_by_id[$product_id];
+                    try {
+                        error_log('Fetching product with ID: ' . $product_id);
+                        $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
+                        if (!$stmt) {
+                            throw new Exception("Failed to prepare statement: " . $conn->error);
+                        }
+                        $stmt->bind_param("i", $product_id);
+                        if (!$stmt->execute()) {
+                            throw new Exception("Failed to execute query: " . $stmt->error);
+                        }
+                        $result = $stmt->get_result();
+                        error_log('Query result: ' . ($result ? 'has results' : 'no results') . ', num_rows: ' . ($result ? $result->num_rows : 'N/A'));
+                        if ($result && $result->num_rows > 0):
+                        $product = $result->fetch_assoc();
                         $total = $product['price'] * $quantity;
                         $grandTotal += $total;
                 ?>
                     <div class="cart-item">
-                        <div class="item-image">
-                            <img src="<?php echo url('/assets/images/placeholder.jpg'); ?>" 
-                                 alt="<?php echo htmlspecialchars($product['name']); ?>">
+                        <?php
+                        $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
+                        ?>
+                        <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                             alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>">
+                        <div class="product-name"><?php echo htmlspecialchars($product['name']); ?></div>
+                        <div class="quantity-controls">
+                            <form method="POST" action="cart.php" style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="hidden" name="action" value="update">
+                                <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+                                <input type="number" name="quantity" value="<?php echo $quantity; ?>" 
+                                       min="1" class="quantity-input">
+                                <button type="submit" class="update-btn">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </form>
                         </div>
-                        <div class="item-details">
-                            <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                            <div class="quantity-controls">
-                                <form method="POST" action="<?php echo url('/cart.php'); ?>" class="quantity-form">
-                                    <input type="hidden" name="action" value="update">
-                                    <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
-                                    <div class="quantity-wrapper">
-                                        <label for="quantity-<?php echo $product_id; ?>">Quantity:</label>
-                                        <input type="number" id="quantity-<?php echo $product_id; ?>" name="quantity" 
-                                               value="<?php echo $quantity; ?>" min="1" class="quantity-input">
-                                        <button type="submit" class="update-btn" title="Update quantity">
-                                            <i class="fas fa-sync-alt"></i>
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                            <p class="price-each">Price each: $<?php echo number_format($product['price'], 2); ?></p>
-                        </div>
-                        <div class="item-subtotal">
-                            <p class="subtotal-label">Subtotal:</p>
-                            <p class="subtotal-amount">$<?php echo number_format($total, 2); ?></p>
-                        </div>
-                        <form method="POST" action="<?php echo url('/cart.php'); ?>">
+                        <div class="price">$<?php echo number_format($product['price'], 2); ?></div>
+                        <div class="total">$<?php echo number_format($total, 2); ?></div>
+                        <form method="POST" action="cart.php">
                             <input type="hidden" name="action" value="remove">
                             <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
                             <button type="submit" class="remove-btn">
