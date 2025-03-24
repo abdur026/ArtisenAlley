@@ -72,7 +72,7 @@ $predefined_categories = [
                 // Use database products if available
                 if ($products_available):
                     while($product = $products_result->fetch_assoc()): 
-                        $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
+                        $image_url = !empty($product['image']) ? asset_url('assets/images/' . $product['image']) : asset_url('assets/images/placeholder.jpg');
                 ?>
                 <div class="product-card">
                     <img src="<?php echo htmlspecialchars($image_url); ?>" 
@@ -90,7 +90,7 @@ $predefined_categories = [
                 // Otherwise use sample products 
                 else:
                     foreach ($sample_products as $product):
-                        $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
+                        $image_url = !empty($product['image']) ? asset_url('assets/images/' . $product['image']) : asset_url('assets/images/placeholder.jpg');
                 ?>
                 <div class="product-card">
                     <img src="<?php echo htmlspecialchars($image_url); ?>" 
@@ -123,8 +123,8 @@ $predefined_categories = [
                         $cat_name = htmlspecialchars($category['name'] ?? '');
                         $image_name = strtolower(str_replace(' ', '-', $cat_name)) . '.jpg';
                         $image_url = file_exists(__DIR__ . '/assets/images/categories/' . $image_name) ? 
-                            url('/assets/images/categories/' . $image_name) : 
-                            url('/assets/images/placeholder.jpg');
+                            asset_url('assets/images/categories/' . $image_name) : 
+                            asset_url('assets/images/placeholder.jpg');
                 ?>
                 <div class="category-card">
                     <img src="<?php echo htmlspecialchars($image_url); ?>" 
@@ -140,8 +140,8 @@ $predefined_categories = [
                     foreach ($predefined_categories as $cat_name):
                         $image_name = strtolower(str_replace(' ', '-', $cat_name)) . '.jpg';
                         $image_url = file_exists(__DIR__ . '/assets/images/categories/' . $image_name) ? 
-                            url('/assets/images/categories/' . $image_name) : 
-                            url('/assets/images/placeholder.jpg');
+                            asset_url('assets/images/categories/' . $image_name) : 
+                            asset_url('assets/images/placeholder.jpg');
                 ?>
                 <div class="category-card">
                     <img src="<?php echo htmlspecialchars($image_url); ?>" 
