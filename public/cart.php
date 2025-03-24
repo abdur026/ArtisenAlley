@@ -1,9 +1,14 @@
 <?php
 session_start();
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Set Content Security Policy header
 header("Content-Security-Policy: default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:;");
 require_once '../config/db.php';
+require_once '../includes/paths.php';
 require_once '../includes/breadcrumb.php';
 
 // Initialize the cart if it doesn't exist
@@ -344,7 +349,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php else: ?>
                     <a href="<?php echo url('/login.php'); ?>">Login</a>
                     <a href="<?php echo url('/register.php'); ?>">Register</a>
-                <?php endif; ?>
+                <?php 
+                        endif;
+                        $stmt->close();
+                    endforeach;
+                } catch (Exception $e) {
+                    error_log("Error in cart.php: " . $e->getMessage());
+                    echo '<div class="error-message">An error occurred while loading your cart. Please try again later.</div>';
+                }
+                ?>
             </div>
         </div>
     </nav>
@@ -376,15 +389,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $grandTotal = 0;
             ?>
             <div class="cart-items">
-                <?php foreach ($_SESSION['cart'] as $product_id => $quantity):
-                    $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
-                    $stmt->bind_param("i", $product_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($result->num_rows > 0):
-                        $product = $result->fetch_assoc();
-                        $total = $product['price'] * $quantity;
-                        $grandTotal += $total;
+                <?php 
+                try {
+                    foreach ($_SESSION['cart'] as $product_id => $quantity):
+                        $stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
+                        if (!$stmt) {
+                            throw new Exception("Prepare failed: " . $conn->error);
+                        }
+                        $stmt->bind_param("i", $product_id);
+                        if (!$stmt->execute()) {
+                            throw new Exception("Execute failed: " . $stmt->error);
+                        }
+                        $result = $stmt->get_result();
+                        if ($result && $result->num_rows > 0):
+                            $product = $result->fetch_assoc();
+                            $total = $product['price'] * $quantity;
+                            $grandTotal += $total;
                 ?>
                     <div class="cart-item">
                         <img src="<?php echo url('/assets/images/' . htmlspecialchars($product['image'] ?? '')); ?>" 
