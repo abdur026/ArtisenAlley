@@ -8,6 +8,6 @@ echo "SCRIPT_NAME: " . ($_SERVER['SCRIPT_NAME'] ?? 'Not set') . "\n";
 echo "Is UBCO Server: " . ($is_ubco_server ? 'Yes' : 'No') . "\n";
 echo "BASE_URL: " . BASE_URL . "\n";
 echo "SITE_ROOT: " . SITE_ROOT . "\n";
-echo "Example URL: " . url('/index.php') . "\n";
+echo "Example URL: " . url('index.php') . "\n";
 echo "Example Asset URL: " . asset_url('assets/css/main.css') . "\n";
 echo "</pre>"; 

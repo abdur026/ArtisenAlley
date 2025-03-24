@@ -1,5 +1,5 @@
 <?php
-// Simplified path configuration for troubleshooting
+// Simplified path configuration for UBCO server
 
 // Collect server information
 $server_name = $_SERVER['SERVER_NAME'] ?? '';
@@ -9,9 +9,9 @@ $is_ubco_server = (strpos($server_name, 'cosc360.ok.ubc.ca') !== false);
 
 // Set paths based on server detection
 if ($is_ubco_server) {
-    // UBCO server paths
-    define('BASE_URL', '/kaamir01/ArtisenAlley/public');
-    define('SITE_ROOT', '/kaamir01/ArtisenAlley');
+    // UBCO server paths - web root is at public_html
+    define('BASE_URL', '/kaamir01');
+    define('SITE_ROOT', '/kaamir01');
 } else {
     // Local development paths
     define('BASE_URL', '');

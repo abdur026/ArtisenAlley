@@ -1,0 +1,73 @@
+# UBCO Server Deployment Instructions
+
+Follow these instructions to properly deploy the ArtisenAlley website on the UBCO cosc360 server.
+
+## Step 1: Connect to the UBCO Server
+```bash
+ssh kaamir01@cosc360.ok.ubc.ca
+```
+
+## Step 2: Navigate to your public_html directory
+```bash
+cd ~/public_html
+```
+
+## Step 3: Create a test.php file to verify basic functionality
+```bash
+echo '<?php echo "Hello World"; ?>' > test.php
+chmod 644 test.php
+```
+
+## Step 4: Verify the test file works by visiting
+```
+https://cosc360.ok.ubc.ca/kaamir01/test.php
+```
+
+## Step 5: Clone the repository with the fixed server configuration
+```bash
+# Remove any previous ArtisenAlley clone if it exists
+rm -rf ArtisenAlley
+
+# Clone the repository
+git clone -b finalTouches-server-merge https://github.com/abdur026/ArtisenAlley.git
+```
+
+## Step 6: Copy the files from the repository to your public_html
+```bash
+# Copy all files from the repository to your public_html
+cp -r ArtisenAlley/* ./
+
+# Copy hidden files like .htaccess
+cp -r ArtisenAlley/.htaccess* ./
+```
+
+## Step 7: Create path_debug.php to verify path configuration
+```bash
+cat > path_debug.php << 'EOF'
+<?php
+require_once __DIR__ . '/config/paths.php';
+echo "<h1>Path Debug Information</h1>";
+echo "<pre>";
+echo "SERVER_NAME: " . ($_SERVER['SERVER_NAME'] ?? 'Not set') . "\n";
+echo "REQUEST_URI: " . ($_SERVER['REQUEST_URI'] ?? 'Not set') . "\n";
+echo "SCRIPT_NAME: " . ($_SERVER['SCRIPT_NAME'] ?? 'Not set') . "\n";
+echo "Is UBCO Server: " . ($is_ubco_server ? 'Yes' : 'No') . "\n";
+echo "BASE_URL: " . BASE_URL . "\n";
+echo "SITE_ROOT: " . SITE_ROOT . "\n";
+echo "Example URL: " . url('index.php') . "\n";
+echo "Example Asset URL: " . asset_url('assets/css/main.css') . "\n";
+echo "</pre>";
+EOF
+chmod 644 path_debug.php
+```
+
+## Step 8: Visit your website
+```
+https://cosc360.ok.ubc.ca/kaamir01/index.php
+```
+
+## NOTE: Understanding the URL structure
+On the UBCO server:
+- Your web root is at `~/public_html/`
+- URLs start with `https://cosc360.ok.ubc.ca/kaamir01/`
+- There's no need for `/ArtisenAlley/public/` in the URL path 
