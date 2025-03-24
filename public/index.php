@@ -72,12 +72,12 @@ $predefined_categories = [
                 // Use database products if available
                 if ($products_available):
                     while($product = $products_result->fetch_assoc()): 
+                        $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
                 ?>
                 <div class="product-card">
-                    <img src="<?php echo asset_url('assets/images/' . ($product['image'] ?? 'placeholder.jpg')); ?>" 
+                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
                          alt="<?php echo htmlspecialchars($product['name'] ?? 'Product'); ?>" 
-                         class="product-image"
-                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
+                         class="product-image">
                     <div class="product-info">
                         <h3><?php echo htmlspecialchars($product['name'] ?? 'Product Name'); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'] ?? 0, 2); ?></p>
@@ -90,12 +90,12 @@ $predefined_categories = [
                 // Otherwise use sample products 
                 else:
                     foreach ($sample_products as $product):
+                        $image_url = !empty($product['image']) ? url('/assets/images/' . $product['image']) : url('/assets/images/placeholder.jpg');
                 ?>
                 <div class="product-card">
-                    <img src="<?php echo asset_url('assets/images/' . ($product['image'] ?? 'placeholder.jpg')); ?>" 
+                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
                          alt="<?php echo htmlspecialchars($product['name'] ?? 'Product'); ?>" 
-                         class="product-image"
-                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
+                         class="product-image">
                     <div class="product-info">
                         <h3><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
@@ -122,12 +122,14 @@ $predefined_categories = [
                     while($category = $categories_result->fetch_assoc()): 
                         $cat_name = htmlspecialchars($category['name'] ?? '');
                         $image_name = strtolower(str_replace(' ', '-', $cat_name)) . '.jpg';
+                        $image_url = file_exists(__DIR__ . '/assets/images/categories/' . $image_name) ? 
+                            url('/assets/images/categories/' . $image_name) : 
+                            url('/assets/images/placeholder.jpg');
                 ?>
                 <div class="category-card">
-                    <img src="<?php echo asset_url('assets/images/categories/' . $image_name); ?>" 
-                         alt="<?php echo $cat_name; ?>" 
-                         class="category-image"
-                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
+                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                         alt="<?php echo htmlspecialchars($cat_name); ?>" 
+                         class="category-image">
                     <h3><?php echo $cat_name; ?></h3>
                     <a href="<?php echo url('/category.php?name=' . urlencode($cat_name)); ?>" class="btn btn-secondary">Explore</a>
                 </div>
@@ -137,12 +139,14 @@ $predefined_categories = [
                 else:
                     foreach ($predefined_categories as $cat_name):
                         $image_name = strtolower(str_replace(' ', '-', $cat_name)) . '.jpg';
+                        $image_url = file_exists(__DIR__ . '/assets/images/categories/' . $image_name) ? 
+                            url('/assets/images/categories/' . $image_name) : 
+                            url('/assets/images/placeholder.jpg');
                 ?>
                 <div class="category-card">
-                    <img src="<?php echo asset_url('assets/images/categories/' . $image_name); ?>" 
-                         alt="<?php echo $cat_name; ?>" 
-                         class="category-image"
-                         onerror="this.src='<?php echo asset_url('assets/images/placeholder.jpg'); ?>'">
+                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
+                         alt="<?php echo htmlspecialchars($cat_name); ?>" 
+                         class="category-image">
                     <h3><?php echo $cat_name; ?></h3>
                     <a href="<?php echo url('/category.php?name=' . urlencode($cat_name)); ?>" class="btn btn-secondary">Explore</a>
                 </div>
