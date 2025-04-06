@@ -1,8 +1,16 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../includes/utils/csrf.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'], 'login_form')) {
+        $_SESSION['error'] = "Invalid form submission. Please try again.";
+        header("Location: login.php");
+        exit;
+    }
+
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
@@ -268,6 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ?>
 
         <form action="login.php" method="POST">
+            <?php echo csrf_token_field('login_form'); ?>
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">

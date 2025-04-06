@@ -1,8 +1,15 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../includes/utils/csrf.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'], 'add_product_form')) {
+        $_SESSION['error'] = "Invalid form submission. Please try again.";
+        header("Location: add_product.php");
+        exit;
+    }
    
     $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
     $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_STRING);
@@ -69,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   ?>
   <form action="add_product.php" method="POST" enctype="multipart/form-data">
+    <?php echo csrf_token_field('add_product_form'); ?>
     <label for="name">Product Name:</label>
     <input type="text" name="name" id="name" required>
 

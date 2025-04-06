@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../includes/breadcrumb.php';
+require_once '../includes/utils/csrf.php';
 
 // Enable debugging temporarily
 $_SESSION['debug'] = true;
@@ -293,27 +294,32 @@ if (isset($_SESSION['debug'])) {
             margin-bottom: 1.5rem;
         }
 
-        .stars {
+        .star-rating {
             display: flex;
             flex-direction: row-reverse;
+            justify-content: flex-end;
             gap: 0.5rem;
         }
 
-        .stars input {
+        .star-rating input {
             display: none;
         }
 
-        .stars label {
+        .star-rating label {
             cursor: pointer;
             color: #e0e0e0;
             font-size: 1.5rem;
             transition: all 0.2s ease;
         }
 
-        .stars label:hover,
-        .stars label:hover ~ label,
-        .stars input:checked ~ label {
+        .star-rating label:hover,
+        .star-rating label:hover ~ label,
+        .star-rating input:checked ~ label {
             color: #f1c40f;
+        }
+
+        .rating-select {
+            margin-bottom: 1.5rem;
         }
 
         .review-input textarea {
@@ -444,20 +450,18 @@ if (isset($_SESSION['debug'])) {
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
             <div>
-                <a href="/public/cart.php">
+                <a href="/index.php">Home</a>
+            </div>
+            <div>
+                <a href="/cart.php">
                     <i class="fas fa-shopping-cart"></i> Cart
-                    <?php if (!empty($_SESSION['cart'])): ?>
-                        <span>(<?php echo array_sum($_SESSION['cart']); ?>)</span>
-                    <?php endif; ?>
                 </a>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
+                    <a href="/profile.php">Profile</a>
+                    <a href="/logout.php">Logout</a>
                 <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
+                    <a href="/login.php">Login</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -530,6 +534,7 @@ if (isset($_SESSION['debug'])) {
                     <h3>Write a Review</h3>
                     <form id="review-form" class="review-form">
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                        <?php echo csrf_token_field('review_form'); ?>
                         <div class="rating-select">
                             <label>Your Rating:</label>
                             <div class="star-rating">
@@ -570,7 +575,13 @@ if (isset($_SESSION['debug'])) {
                         <div class="review" data-review-id="<?php echo $review['id']; ?>">
                             <div class="review-header">
                                 <div class="reviewer-info">
-                                    <img src="<?php echo $review['profile_image'] ? 'uploads/profile/' . htmlspecialchars($review['profile_image']) : 'assets/images/default-profile.png'; ?>" 
+                                    <img src="<?php 
+                                        if ($review['profile_image']) {
+                                            echo '/uploads/' . htmlspecialchars($review['profile_image']);
+                                        } else {
+                                            echo '/assets/images/default-avatar.png';
+                                        }
+                                    ?>" 
                                         alt="<?php echo htmlspecialchars($review['reviewer_name']); ?>" 
                                         class="reviewer-image">
                                     <div class="reviewer-details">
@@ -620,11 +631,18 @@ if (isset($_SESSION['debug'])) {
             const reviewDate = new Date(review.created_at);
             const formattedDate = reviewDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             
+            let imagePath = '';
+            if (review.profile_image) {
+                imagePath = '/uploads/' + review.profile_image;
+            } else {
+                imagePath = '/assets/images/default-avatar.png';
+            }
+            
             return `
                 <div class="review" data-review-id="${review.id}">
                     <div class="review-header">
                         <div class="reviewer-info">
-                            <img src="${review.profile_image ? 'uploads/profile/' + review.profile_image : 'assets/images/default-profile.png'}" 
+                            <img src="${imagePath}" 
                                 alt="${review.reviewer_name}" 
                                 class="reviewer-image">
                             <div class="reviewer-details">
@@ -651,6 +669,7 @@ if (isset($_SESSION['debug'])) {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', 'add_review.php', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('X-CSRF-TOKEN', formData.get('csrf_token'));
             
             xhr.onload = function() {
                 if (xhr.status === 200) {

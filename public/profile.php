@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../includes/breadcrumb.php';
+require_once '../includes/utils/csrf.php';
 
 
 if (!isset($_SESSION['user_id'])) {
@@ -439,12 +440,6 @@ if (!$user['profile_image']) {
                         </a>
                     </li>
                     <li>
-                        <a href="wishlist.php">
-                            <i class="fas fa-heart"></i>
-                            Wishlist
-                        </a>
-                    </li>
-                    <li>
                         <a href="reviews.php">
                             <i class="fas fa-star"></i>
                             Community Reviews
@@ -483,6 +478,7 @@ if (!$user['profile_image']) {
                 <section id="profile-info">
                     <h2 class="section-title">Profile Information</h2>
                     <form action="update_profile.php" method="POST" enctype="multipart/form-data">
+                        <?php echo csrf_token_field('profile_form'); ?>
                         <div class="image-upload">
                             <?php if ($profile_image_data): ?>
                                 <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 

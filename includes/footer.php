@@ -1,7 +1,4 @@
 <footer>
-        <p>&copy; <?php echo date("Y"); ?> Artisan Alley. All rights reserved.</p>
-    </footer>
-    <footer>
         <div class="footer-content">
             <div class="footer-section">
                 <h3>About Us</h3>
