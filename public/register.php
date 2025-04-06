@@ -1,7 +1,15 @@
 <?php
 session_start();
+require_once '../includes/utils/csrf.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'], 'register_form')) {
+        $_SESSION['error'] = "Invalid form submission. Please try again.";
+        header("Location: register.php");
+        exit;
+    }
+
     $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
@@ -12,11 +20,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Check if profile image was uploaded
+    $profile_image = null;
+    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $file_type = $_FILES['profile_image']['type'];
+        
+        if (!in_array($file_type, $allowed_types)) {
+            $_SESSION['error'] = "Invalid file type. Please upload a JPEG, PNG, GIF, or WEBP image.";
+            header("Location: register.php");
+            exit;
+        }
+        
+        $file_size = $_FILES['profile_image']['size'];
+        if ($file_size > 5242880) { // 5MB
+            $_SESSION['error'] = "File is too large. Maximum file size is 5MB.";
+            header("Location: register.php");
+            exit;
+        }
+        
+        // Create uploads directory if it doesn't exist
+        $upload_dir = '../uploads/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        
+        // Generate unique filename
+        $file_extension = pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION);
+        $filename = 'profile_' . time() . '_' . uniqid() . '.' . $file_extension;
+        $upload_path = $upload_dir . $filename;
+        
+        if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $upload_path)) {
+            $profile_image = $filename;
+        } else {
+            $_SESSION['error'] = "Failed to upload image. Please try again.";
+            header("Location: register.php");
+            exit;
+        }
+    } else {
+        $_SESSION['error'] = "Profile image is required. Please upload an image.";
+        header("Location: register.php");
+        exit;
+    }
+
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
     require_once '../config/db.php';
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $name, $email, $hashedPassword);
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, profile_image) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $name, $email, $hashedPassword, $profile_image);
 
     if ($stmt->execute()) {
         $_SESSION['success'] = "Registration successful! Please log in.";
@@ -116,6 +167,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all 0.3s ease;
             background-color: #f8fafc;
             box-sizing: border-box;
+        }
+
+        .form-group input[type="file"] {
+            padding: 0.8rem 1rem;
+            padding-left: 2.5rem;
         }
 
         .form-group input:focus {
@@ -260,6 +316,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .strength-weak { width: 33.33%; background: #e74c3c; }
         .strength-medium { width: 66.66%; background: #f1c40f; }
         .strength-strong { width: 100%; background: #2ecc71; }
+
+        /* Image preview */
+        .image-preview {
+            width: 100%;
+            max-width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e0e0e0;
+            margin: 10px auto;
+            display: block;
+        }
+
+        .image-preview-container {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input-container {
+            position: relative;
+        }
+
+        .custom-file-upload {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            display: inline-block;
+            padding: 1rem 1rem 1rem 2.5rem;
+            cursor: pointer;
+            width: 100%;
+            background-color: #f8fafc;
+            box-sizing: border-box;
+            font-size: 1rem;
+            text-align: left;
+            transition: all 0.3s ease;
+            color: #95a5a6;
+        }
+
+        .custom-file-upload:hover {
+            border-color: #3498db;
+        }
+
+        .input-file {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
     </style>
     <script src="../src/main.js" defer></script>
 </head>
@@ -281,7 +387,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         ?>
 
-        <form action="register.php" method="POST" onsubmit="return validateRegistrationForm();">
+        <form action="register.php" method="POST" enctype="multipart/form-data" onsubmit="return validateRegistrationForm();">
+            <?php echo csrf_token_field('register_form'); ?>
+            
+            <div class="image-preview-container">
+                <img id="preview-image" src="/assets/images/default-avatar.png" alt="Profile Preview" class="image-preview">
+            </div>
+            
+            <div class="form-group">
+                <label for="profile_image">Profile Image</label>
+                <div class="file-input-container">
+                    <label for="profile_image" class="custom-file-upload">
+                        <i class="fas fa-camera"></i>
+                        <span id="file-name">Choose a profile picture</span>
+                    </label>
+                    <input type="file" id="profile_image" name="profile_image" class="input-file" accept="image/*" required onchange="previewImage(this)">
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your full name">
@@ -339,6 +462,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else if (strength >= 1) {
                 strengthBar.classList.add('strength-weak');
             }
+        }
+
+        function previewImage(input) {
+            const preview = document.getElementById('preview-image');
+            const fileNameSpan = document.getElementById('file-name');
+            
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                fileNameSpan.textContent = fileName.length > 25 ? fileName.substring(0, 22) + '...' : fileName;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = '/assets/images/default-avatar.png';
+                fileNameSpan.textContent = 'Choose a profile picture';
+            }
+        }
+
+        function validateRegistrationForm() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const profileImage = document.getElementById('profile_image');
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return false;
+            }
+            
+            if (!profileImage.files || !profileImage.files[0]) {
+                alert('Please select a profile image!');
+                return false;
+            }
+            
+            return true;
         }
     </script>
 </body>

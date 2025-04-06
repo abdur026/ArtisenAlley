@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../includes/breadcrumb.php';
+require_once '../includes/utils/csrf.php';
 
 // Enable debugging temporarily
 $_SESSION['debug'] = true;
@@ -292,27 +294,32 @@ if (isset($_SESSION['debug'])) {
             margin-bottom: 1.5rem;
         }
 
-        .stars {
+        .star-rating {
             display: flex;
             flex-direction: row-reverse;
+            justify-content: flex-end;
             gap: 0.5rem;
         }
 
-        .stars input {
+        .star-rating input {
             display: none;
         }
 
-        .stars label {
+        .star-rating label {
             cursor: pointer;
             color: #e0e0e0;
             font-size: 1.5rem;
             transition: all 0.2s ease;
         }
 
-        .stars label:hover,
-        .stars label:hover ~ label,
-        .stars input:checked ~ label {
+        .star-rating label:hover,
+        .star-rating label:hover ~ label,
+        .star-rating input:checked ~ label {
             color: #f1c40f;
+        }
+
+        .rating-select {
+            margin-bottom: 1.5rem;
         }
 
         .review-input textarea {
@@ -443,26 +450,35 @@ if (isset($_SESSION['debug'])) {
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
             <div>
-                <a href="/public/cart.php">
+                <a href="/index.php">Home</a>
+            </div>
+            <div>
+                <a href="/cart.php">
                     <i class="fas fa-shopping-cart"></i> Cart
-                    <?php if (!empty($_SESSION['cart'])): ?>
-                        <span>(<?php echo array_sum($_SESSION['cart']); ?>)</span>
-                    <?php endif; ?>
                 </a>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
+                    <a href="/profile.php">Profile</a>
+                    <a href="/logout.php">Logout</a>
                 <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
+                    <a href="/login.php">Login</a>
                 <?php endif; ?>
             </div>
         </div>
     </nav>
 
     <div class="product-container">
+        <?php
+        // Generate breadcrumbs
+        $category_url = "search.php?category=" . urlencode($product['category']);
+        $breadcrumbs = [
+            ['name' => 'Home', 'url' => 'index.php'],
+            ['name' => $product['category'], 'url' => $category_url],
+            ['name' => $product['name']]
+        ];
+        echo generate_breadcrumbs($breadcrumbs);
+        ?>
+        
         <div class="product-details">
             <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
                  alt="<?php echo htmlspecialchars($product['name']); ?>"
@@ -516,78 +532,75 @@ if (isset($_SESSION['debug'])) {
             <?php if(isset($_SESSION['user_id'])): ?>
                 <div class="review-form-container">
                     <h3>Write a Review</h3>
-                    <form action="add_review.php" method="POST" class="review-form">
+                    <form id="review-form" class="review-form">
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                        
-                        <div class="rating-input">
+                        <?php echo csrf_token_field('review_form'); ?>
+                        <div class="rating-select">
                             <label>Your Rating:</label>
-                            <div class="stars">
-                                <?php for($i = 5; $i >= 1; $i--): ?>
-                                    <input type="radio" id="star<?php echo $i; ?>" name="rating" value="<?php echo $i; ?>" required>
-                                    <label for="star<?php echo $i; ?>"><i class="fas fa-star"></i></label>
-                                <?php endfor; ?>
+                            <div class="star-rating">
+                                <input type="radio" id="star5" name="rating" value="5" required>
+                                <label for="star5" title="5 stars"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star4" name="rating" value="4">
+                                <label for="star4" title="4 stars"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star3" name="rating" value="3">
+                                <label for="star3" title="3 stars"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star2" name="rating" value="2">
+                                <label for="star2" title="2 stars"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star1" name="rating" value="1">
+                                <label for="star1" title="1 star"><i class="fas fa-star"></i></label>
                             </div>
                         </div>
-
-                        <div class="review-input">
+                        <div class="review-comment-field">
                             <label for="comment">Your Review:</label>
-                            <textarea id="comment" name="comment" required rows="4" placeholder="Share your thoughts about this product..."></textarea>
+                            <textarea id="comment" name="comment" required placeholder="Share your experience with this product..."></textarea>
                         </div>
-
-                        <button type="submit" class="submit-review">
-                            <i class="fas fa-paper-plane"></i> Submit Review
-                        </button>
+                        <button type="submit" class="submit-review">Submit Review</button>
+                        <p id="review-status-message" class="review-status"></p>
                     </form>
                 </div>
             <?php else: ?>
                 <div class="login-prompt">
-                    <p>Please <a href="login.php">log in</a> to write a review.</p>
+                    <p><a href="login.php">Sign in</a> to leave a review.</p>
                 </div>
             <?php endif; ?>
 
-            <div class="reviews-list">
-                <?php 
-                $average_rating = calculateAverageRating($reviewsResult);
-                if($average_rating > 0):
-                ?>
-                    <div class="average-rating">
-                        <span class="rating-number"><?php echo $average_rating; ?></span>
-                        <div class="stars">
-                            <?php
-                            for($i = 1; $i <= 5; $i++) {
-                                if($i <= $average_rating) {
-                                    echo '<i class="fas fa-star filled"></i>';
-                                } elseif($i - 0.5 <= $average_rating) {
-                                    echo '<i class="fas fa-star-half-alt"></i>';
-                                } else {
-                                    echo '<i class="far fa-star"></i>';
-                                }
-                            }
-                            ?>
-                        </div>
-                        <span class="total-reviews">(<?php echo $reviewsResult->num_rows; ?> reviews)</span>
-                    </div>
-                <?php endif; ?>
-
-                <?php 
-                $reviewsResult->data_seek(0);
-                while($review = $reviewsResult->fetch_assoc()): 
-                ?>
-                    <div class="review-card">
-                        <div class="review-header">
-                            <div class="reviewer-info">
-                                <span class="reviewer-name"><?php echo htmlspecialchars($review['reviewer_name']); ?></span>
-                                <div class="review-rating">
-                                    <?php for($i = 1; $i <= 5; $i++): ?>
-                                        <i class="fas fa-star <?php echo $i <= $review['rating'] ? 'filled' : ''; ?>"></i>
-                                    <?php endfor; ?>
+            <div id="reviews-list" class="reviews-list">
+                <?php if($reviewsResult && $reviewsResult->num_rows > 0): ?>
+                    <?php while($review = $reviewsResult->fetch_assoc()):
+                        // Store the most recent review timestamp for AJAX polling
+                        if (!isset($latest_review_time) || strtotime($review['created_at']) > strtotime($latest_review_time)) {
+                            $latest_review_time = $review['created_at'];
+                        }
+                    ?>
+                        <div class="review" data-review-id="<?php echo $review['id']; ?>">
+                            <div class="review-header">
+                                <div class="reviewer-info">
+                                    <img src="<?php 
+                                        if ($review['profile_image']) {
+                                            echo '/uploads/' . htmlspecialchars($review['profile_image']);
+                                        } else {
+                                            echo '/assets/images/default-avatar.png';
+                                        }
+                                    ?>" 
+                                        alt="<?php echo htmlspecialchars($review['reviewer_name']); ?>" 
+                                        class="reviewer-image">
+                                    <div class="reviewer-details">
+                                        <h4 class="reviewer-name"><?php echo htmlspecialchars($review['reviewer_name']); ?></h4>
+                                        <div class="review-rating">
+                                            <?php for($i = 1; $i <= 5; $i++): ?>
+                                                <i class="fas fa-star <?php echo ($i <= $review['rating']) ? 'filled' : ''; ?>"></i>
+                                            <?php endfor; ?>
+                                        </div>
+                                        <div class="review-date"><?php echo date('F j, Y', strtotime($review['created_at'])); ?></div>
+                                    </div>
                                 </div>
                             </div>
-                            <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
+                            <p class="review-comment"><?php echo htmlspecialchars($review['comment']); ?></p>
                         </div>
-                        <p class="review-comment"><?php echo htmlspecialchars($review['comment']); ?></p>
-                    </div>
-                <?php endwhile; ?>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <p class="no-reviews">No reviews yet. Be the first to review this product!</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -600,17 +613,167 @@ if (isset($_SESSION['debug'])) {
     <?php endif; ?>
 
     <script>
+        // Initialize latest review timestamp from PHP
+        let latestReviewTimestamp = '<?php echo isset($latest_review_time) ? $latest_review_time : '0000-00-00 00:00:00'; ?>';
+        const productId = <?php echo $product['id']; ?>;
         
-        const successMessage = document.querySelector('.success-message');
-        if (successMessage) {
-            setTimeout(() => {
-                successMessage.style.opacity = '0';
-                setTimeout(() => successMessage.remove(), 300);
-            }, 3000);
+        // Function to add stars based on rating
+        function getStarsHtml(rating) {
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                starsHtml += `<i class="fas fa-star ${i <= rating ? 'filled' : ''}"></i>`;
+            }
+            return starsHtml;
         }
-
         
-        document.querySelector('.add-to-cart-form').addEventListener('submit', function(e) {
+        // Function to create review HTML
+        function createReviewElement(review) {
+            const reviewDate = new Date(review.created_at);
+            const formattedDate = reviewDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            let imagePath = '';
+            if (review.profile_image) {
+                imagePath = '/uploads/' + review.profile_image;
+            } else {
+                imagePath = '/assets/images/default-avatar.png';
+            }
+            
+            return `
+                <div class="review" data-review-id="${review.id}">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <img src="${imagePath}" 
+                                alt="${review.reviewer_name}" 
+                                class="reviewer-image">
+                            <div class="reviewer-details">
+                                <h4 class="reviewer-name">${review.reviewer_name}</h4>
+                                <div class="review-rating">
+                                    ${getStarsHtml(review.rating)}
+                                </div>
+                                <div class="review-date">${formattedDate}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="review-comment">${review.comment}</p>
+                </div>
+            `;
+        }
+        
+        // Add event listener to the review form
+        document.getElementById('review-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const statusElement = document.getElementById('review-status-message');
+            
+            // Set up the AJAX request
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'add_review.php', true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('X-CSRF-TOKEN', formData.get('csrf_token'));
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        
+                        if (response.success) {
+                            // Add the new review to the top of the list
+                            const reviewsList = document.getElementById('reviews-list');
+                            const noReviewsElement = document.querySelector('.no-reviews');
+                            
+                            // Remove "no reviews" message if it exists
+                            if (noReviewsElement) {
+                                noReviewsElement.remove();
+                            }
+                            
+                            // Add the new review to the top of the list
+                            const reviewElement = createReviewElement(response.review);
+                            reviewsList.insertAdjacentHTML('afterbegin', reviewElement);
+                            
+                            // Update the latest timestamp
+                            latestReviewTimestamp = response.review.created_at;
+                            
+                            // Reset the form
+                            document.getElementById('review-form').reset();
+                            statusElement.textContent = 'Review submitted successfully!';
+                            statusElement.className = 'review-status success';
+                            
+                            // Clear the status message after 3 seconds
+                            setTimeout(() => {
+                                statusElement.textContent = '';
+                                statusElement.className = 'review-status';
+                            }, 3000);
+                        } else {
+                            statusElement.textContent = response.error || 'An error occurred while submitting your review.';
+                            statusElement.className = 'review-status error';
+                        }
+                    } catch (e) {
+                        statusElement.textContent = 'An error occurred while processing the server response.';
+                        statusElement.className = 'review-status error';
+                    }
+                }
+            };
+            
+            xhr.onerror = function() {
+                statusElement.textContent = 'Network error occurred while submitting your review.';
+                statusElement.className = 'review-status error';
+            };
+            
+            xhr.send(formData);
+        });
+        
+        // Function to check for new reviews
+        function checkForNewReviews() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `get_reviews.php?product_id=${productId}&last_timestamp=${encodeURIComponent(latestReviewTimestamp)}`, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        
+                        if (response.success && response.reviews.length > 0) {
+                            const reviewsList = document.getElementById('reviews-list');
+                            const noReviewsElement = document.querySelector('.no-reviews');
+                            
+                            // Remove "no reviews" message if it exists
+                            if (noReviewsElement) {
+                                noReviewsElement.remove();
+                            }
+                            
+                            // Add new reviews to the list
+                            response.reviews.forEach(review => {
+                                // Skip if we already have this review displayed
+                                const existingReview = document.querySelector(`.review[data-review-id="${review.id}"]`);
+                                if (!existingReview) {
+                                    const reviewElement = createReviewElement(review);
+                                    reviewsList.insertAdjacentHTML('afterbegin', reviewElement);
+                                    
+                                    // Update latest timestamp if newer
+                                    if (new Date(review.created_at) > new Date(latestReviewTimestamp)) {
+                                        latestReviewTimestamp = review.created_at;
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                    }
+                }
+            };
+            
+            xhr.send();
+        }
+        
+        // Check for new reviews every 10 seconds
+        setInterval(checkForNewReviews, 10000);
+        
+        // Initial check for any new reviews that might have been added since page load
+        setTimeout(checkForNewReviews, 1000);
+        
+        // Add to cart functionality
+        document.querySelector('.add-to-cart-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
             

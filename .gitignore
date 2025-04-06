@@ -32,3 +32,6 @@ bootstrap/cache/
 phpunit.xml
 phpunit.xml.dist
 /tests/_output/
+
+# Configuration file with sensitive information
+/config.php

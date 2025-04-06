@@ -1,8 +1,15 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../includes/utils/csrf.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'], 'profile_form')) {
+        $_SESSION['error'] = "Invalid form submission. Please try again.";
+        header("Location: profile.php");
+        exit;
+    }
  
     if (!isset($_SESSION['user_id'])) {
         $_SESSION['error'] = "Please log in to update your profile.";
