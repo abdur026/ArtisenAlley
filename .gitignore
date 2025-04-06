@@ -1,0 +1,37 @@
+# Ignore system files
+*.log
+*.cache
+*.bak
+*.swp
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore Composer dependencies
+/vendor/
+/composer.lock
+
+# Ignore environment and security files
+.env
+.env.local
+.env.production
+.env.testing
+
+# Ignore Laravel-specific files (if applicable)
+storage/
+bootstrap/cache/
+
+# Ignore PHPUnit test results
+phpunit.xml
+phpunit.xml.dist
+/tests/_output/
+
+# Configuration file with sensitive information
+/config.php
