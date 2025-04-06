@@ -1,14 +1,14 @@
 <?php
 session_start();
 require_once '../config/db.php';
+// Include header before anything else that might output
+include __DIR__ . '/../includes/header.php'; 
 require_once '../includes/breadcrumb.php';
-
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-
 
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT name, email, profile_image FROM users WHERE id = ?");
@@ -398,8 +398,6 @@ if (!$user['profile_image']) {
     </style>
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
-
     <div class="profile-container">
         <?php
         // Generate breadcrumbs

@@ -5,6 +5,13 @@ require_once '../config/db.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
+    
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid form submission.";
+        header("Location: login.php");
+        exit;
+    }
 
     if (!$email || !$password) {
         $_SESSION['error'] = "All fields are required.";
@@ -23,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role'];
-            header("Location: ../index.php");
+            header("Location: index.php");
             exit;
         } else {
             $_SESSION['error'] = "Incorrect password.";
@@ -44,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -267,20 +274,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         ?>
 
-        <form action="login.php" method="POST">
+        <form method="post" action="" class="login-form">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+            
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email">
                 <i class="fas fa-envelope"></i>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
             </div>
-
+            
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
                 <i class="fas fa-lock"></i>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
             </div>
-
-            <button type="submit" class="login-btn">Sign In</button>
+            
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
         </form>
 
         <div class="register-link">

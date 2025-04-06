@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+include __DIR__ . '/../includes/header.php';
 require_once '../includes/breadcrumb.php';
 
 // Initialize the cart if it doesn't exist
@@ -74,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Shopping Cart - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -330,21 +331,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
-            <div>
-                <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
-                <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </nav>
-
     <div class="cart-container">
         <?php
         // Generate breadcrumbs
@@ -363,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-shopping-basket"></i>
                 <h2>Your cart is empty</h2>
                 <p>Looks like you haven't added any items to your cart yet.</p>
-                <a href="/public/index.php" class="continue-shopping">
+                <a href="/index.php" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
             </div>
@@ -414,24 +400,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ?>
             </div>
 
+            <div class="continue-shopping-container" style="text-align: center; margin-top: 2rem;">
+                <a href="/index.php" class="continue-shopping">
+                    <i class="fas fa-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+
             <div class="cart-summary">
                 <div class="summary-row">
-                    <span>Subtotal</span>
-                    <span>$<?php echo number_format($grandTotal, 2); ?></span>
+                    <div>Subtotal:</div>
+                    <div>$<?php echo number_format($grandTotal, 2); ?></div>
                 </div>
                 <div class="summary-row">
-                    <span>Shipping</span>
-                    <span>Free</span>
+                    <div>Shipping:</div>
+                    <div>FREE</div>
                 </div>
-                <div class="summary-row grand-total">
-                    <span>Total</span>
-                    <span>$<?php echo number_format($grandTotal, 2); ?></span>
+                <div class="grand-total">
+                    <div>Total:</div>
+                    <div>$<?php echo number_format($grandTotal, 2); ?></div>
                 </div>
-                <a href="/public/checkout.php" class="checkout-btn">
+                <a href="/checkout.php" class="checkout-btn">
                     <i class="fas fa-lock"></i> Proceed to Checkout
-                </a>
-                <a href="/public/index.php" class="continue-shopping">
-                    <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
             </div>
         <?php endif; ?>

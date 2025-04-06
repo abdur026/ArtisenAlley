@@ -2,7 +2,7 @@
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+    $name = htmlspecialchars(trim($_POST['name']), ENT_QUOTES, 'UTF-8');
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
@@ -22,10 +22,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
-        $filename = basename($_FILES['profile_image']['name']);
-        $targetFile = $uploadDir . $filename;
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+        $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+        $detectedType = finfo_file($fileInfo, $_FILES['profile_image']['tmp_name']);
+        finfo_close($fileInfo);
+        
+        if (!in_array($detectedType, $allowedTypes)) {
+            $_SESSION['error'] = "Invalid file type. Only JPG, PNG and GIF are allowed.";
+            header("Location: register.php");
+            exit;
+        }
+        
+        // Check file size (limit to 5MB)
+        if ($_FILES['profile_image']['size'] > 5 * 1024 * 1024) {
+            $_SESSION['error'] = "File is too large. Maximum size is 5MB.";
+            header("Location: register.php");
+            exit;
+        }
+        
+        // Generate secure filename
+        $fileExtension = pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION);
+        $newFilename = 'profile_' . time() . '_' . rand(1000, 9999) . '.' . $fileExtension;
+        $targetFile = $uploadDir . $newFilename;
+        
         if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $targetFile)) {
-            $profile_image = $filename;
+            $profile_image = $newFilename;
         } else {
             $_SESSION['error'] = "Failed to upload profile image.";
             header("Location: register.php");
@@ -54,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -313,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: none;
         }
     </style>
-    <script src="../src/main.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
 </head>
 <body>
     <div class="register-container">

@@ -4,10 +4,10 @@ require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
    
-    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
-    $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_STRING);
-    $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
-    $category = filter_input(INPUT_POST, 'category', FILTER_SANITIZE_STRING);
+    $name = htmlspecialchars(trim($_POST['name']), ENT_QUOTES, 'UTF-8');
+    $description = htmlspecialchars(trim($_POST['description']), ENT_QUOTES, 'UTF-8');
+    $price = floatval($_POST['price']);
+    $category = htmlspecialchars(trim($_POST['category']), ENT_QUOTES, 'UTF-8');
     $stock = filter_input(INPUT_POST, 'stock', FILTER_VALIDATE_INT);
 
    

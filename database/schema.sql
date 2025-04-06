@@ -61,10 +61,65 @@ CREATE TABLE IF NOT EXISTS reviews (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Forum Categories table
+CREATE TABLE IF NOT EXISTS forum_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    icon VARCHAR(50) DEFAULT 'fa-comments',
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Forum Threads table
+CREATE TABLE IF NOT EXISTS forum_threads (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    user_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    views INT DEFAULT 0,
+    is_sticky BOOLEAN DEFAULT FALSE,
+    is_locked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES forum_categories(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Forum Replies table
+CREATE TABLE IF NOT EXISTS forum_replies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    thread_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (thread_id) REFERENCES forum_threads(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- Insert sample data
 INSERT INTO users (name, email, password, role) VALUES
 ('Admin User', 'admin@artisanalley.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
 ('John Doe', 'john@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user');
+
+-- Insert sample forum categories
+INSERT INTO forum_categories (name, description, icon, display_order) VALUES
+('General Discussion', 'Talk about anything related to arts and crafts', 'fa-comments', 1),
+('Tips & Techniques', 'Share your expertise and learn from others', 'fa-lightbulb', 2),
+('Projects Showcase', 'Show off your latest creations', 'fa-images', 3),
+('Materials & Supplies', 'Discuss the best materials and where to find them', 'fa-tools', 4);
+
+-- Insert sample threads
+INSERT INTO forum_threads (category_id, user_id, title, content) VALUES
+(1, 1, 'Welcome to the Artisan Alley Community!', 'Welcome to our community of artisans and craft lovers! Feel free to introduce yourself and share your passion for handmade items.'),
+(2, 2, 'Best techniques for beginner potters', 'I just started pottery and would love some advice on basic techniques that helped you when you were starting out.');
+
+-- Insert sample replies
+INSERT INTO forum_replies (thread_id, user_id, content) VALUES
+(1, 2, 'Thanks for creating this community! I''m John, and I love working with leather. Looking forward to connecting with fellow artisans!'),
+(2, 1, 'As a potter, I''d recommend starting with basic pinch pots and coil techniques before moving to the wheel. It helps you understand the clay better.');
 
 INSERT INTO products (name, description, price, category, image_url, stock, featured, artisan_id) VALUES
 ('Handmade Ceramic Vase', 'Beautiful hand-crafted ceramic vase with unique glazing', 79.99, 'Ceramics', '/public/images/products/vase1.jpg', 10, TRUE, 1),

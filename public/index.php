@@ -1,4 +1,5 @@
 <?php 
+session_start();
 include __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../config/db.php';
 
@@ -46,10 +47,10 @@ $categories_result = $conn->query($categories_query);
                     while($product = $products_result->fetch_assoc()): 
                 ?>
                 <div class="product-card">
-                    <img src="assets/images/<?php echo htmlspecialchars($product['image'] ?? ''); ?>" 
+                    <img src="<?php echo htmlspecialchars(str_replace('/public', '', $product['image_url'] ?? '/assets/images/placeholder.jpg')); ?>" 
                          alt="<?php echo htmlspecialchars($product['name'] ?? ''); ?>" 
                          class="product-image"
-                         onerror="this.src='assets/images/placeholder.jpg'">
+                         onerror="this.src='/assets/images/placeholder.jpg'">
                     <div class="product-info">
                         <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
@@ -74,10 +75,10 @@ $categories_result = $conn->query($categories_query);
             <div class="categories-grid">
                 <?php while($category = $categories_result->fetch_assoc()): ?>
                 <div class="category-card">
-                    <img src="assets/images/categories/<?php echo strtolower(str_replace(' ', '-', $category['category'])); ?>.jpg" 
+                    <img src="/images/categories/<?php echo strtolower(str_replace(' ', '-', $category['category'])); ?>.jpg" 
                          alt="<?php echo htmlspecialchars($category['category']); ?>" 
                          class="category-image"
-                         onerror="this.src='assets/images/placeholder.jpg'">
+                         onerror="this.src='/assets/images/placeholder.jpg'">
                     <div class="category-overlay">
                         <h3><?php echo htmlspecialchars($category['category']); ?></h3>
                     </div>

@@ -1,10 +1,11 @@
 <?php
 session_start();
 require_once '../config/db.php';
+include __DIR__ . '/../includes/header.php';
 require_once '../includes/breadcrumb.php';
 
 // Enable debugging temporarily
-$_SESSION['debug'] = true;
+// $_SESSION['debug'] = true;
 
 function calculateAverageRating($reviews) {
     if ($reviews->num_rows === 0) return 0;
@@ -45,6 +46,7 @@ $stmtReviews->execute();
 $reviewsResult = $stmtReviews->get_result();
 
 // Add debugging information
+/*
 if (isset($_SESSION['debug'])) {
     echo "<pre>";
     echo "Product ID: " . $product_id . "\n";
@@ -56,6 +58,7 @@ if (isset($_SESSION['debug'])) {
     echo "</pre>";
     $reviewsResult->data_seek(0);
 }
+*/
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -63,7 +66,7 @@ if (isset($_SESSION['debug'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($product['name']); ?> - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -442,27 +445,6 @@ if (isset($_SESSION['debug'])) {
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
-            <div>
-                <a href="/public/cart.php">
-                    <i class="fas fa-shopping-cart"></i> Cart
-                    <?php if (!empty($_SESSION['cart'])): ?>
-                        <span>(<?php echo array_sum($_SESSION['cart']); ?>)</span>
-                    <?php endif; ?>
-                </a>
-                <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
-                <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </nav>
-
     <div class="product-container">
         <?php
         // Generate breadcrumbs
@@ -476,10 +458,10 @@ if (isset($_SESSION['debug'])) {
         ?>
         
         <div class="product-details">
-            <img src="assets/images/<?php echo htmlspecialchars($product['image']); ?>" 
+            <img src="<?php echo htmlspecialchars(str_replace('/public', '', $product['image_url'] ?? '/assets/images/placeholder.jpg')); ?>" 
                  alt="<?php echo htmlspecialchars($product['name']); ?>"
                  class="product-image"
-                 onerror="this.src='assets/images/placeholder.jpg'">
+                 onerror="this.src='/assets/images/placeholder.jpg'">
             
             <div class="product-info">
                 <div class="product-category">
@@ -489,7 +471,7 @@ if (isset($_SESSION['debug'])) {
                 <div class="product-price">$<?php echo number_format($product['price'], 2); ?></div>
                 <p class="product-description"><?php echo htmlspecialchars($product['description']); ?></p>
                 
-                <form action="cart.php" method="POST" class="add-to-cart-form">
+                <form action="/cart.php" method="POST" class="add-to-cart-form">
                     <input type="hidden" name="action" value="add">
                     <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                     
@@ -758,7 +740,7 @@ if (isset($_SESSION['debug'])) {
             e.preventDefault();
             const formData = new FormData(this);
             
-            fetch('cart.php', {
+            fetch('/cart.php', {
                 method: 'POST',
                 body: formData
             }).then(response => {
