@@ -36,11 +36,13 @@ try {
             <?php
             try {
                 // Fetch featured products from database
-                $stmt = $pdo->query("SELECT * FROM products WHERE featured = 1 LIMIT 4");
+                $stmt = $pdo->query("SELECT p.*, c.name as category_name FROM products p 
+                                   JOIN categories c ON p.category_id = c.id 
+                                   ORDER BY p.created_at DESC LIMIT 4");
                 while ($product = $stmt->fetch()) {
             ?>
                     <div class="product-card">
-                        <img src="<?php echo image('/' . htmlspecialchars($product['image'] ?? '')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                        <img src="<?php echo image('/' . htmlspecialchars($product['image_url'] ?? '')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
                         <h3><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="price">$<?php echo number_format($product['price'], 2); ?></p>
                         <a href="<?php echo url('/product.php?id=' . $product['id']); ?>" class="cta-button">View Details</a>
@@ -60,13 +62,13 @@ try {
             <?php
             try {
                 // Fetch categories from database
-                $stmt = $pdo->query("SELECT category, description FROM categories");
+                $stmt = $pdo->query("SELECT * FROM categories");
                 while ($category = $stmt->fetch()) {
             ?>
                     <div class="category-card">
-                        <img src="<?php echo image('/categories/' . strtolower(str_replace(' ', '-', $category['category'])) . '.jpg'); ?>" alt="<?php echo htmlspecialchars($category['category']); ?>">
-                        <h3><?php echo htmlspecialchars($category['category']); ?></h3>
-                        <a href="<?php echo url('/search.php?category=' . urlencode($category['category'])); ?>" class="cta-button">Browse</a>
+                        <img src="<?php echo image('/categories/' . htmlspecialchars($category['image_url'])); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                        <h3><?php echo htmlspecialchars($category['name']); ?></h3>
+                        <a href="<?php echo url('/search.php?category=' . urlencode($category['name'])); ?>" class="cta-button">Browse</a>
                     </div>
             <?php 
                 }
