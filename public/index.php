@@ -1,7 +1,7 @@
 <?php
 require_once '../includes/functions.php';
 require_once '../includes/header.php';
-require_once __DIR__ . '/../config/db.php';
+require_once '../config/db.php';  // This will give us $pdo connection
 
 // Enable error reporting
 error_reporting(E_ALL);
@@ -39,17 +39,23 @@ $categories_result = $conn->query($categories_query);
         <h2>Featured Products</h2>
         <div class="product-grid">
             <?php
-            // Fetch featured products from database
-            $stmt = $pdo->query("SELECT * FROM products WHERE featured = 1 LIMIT 4");
-            while ($product = $stmt->fetch()) {
+            try {
+                // Fetch featured products from database
+                $stmt = $pdo->query("SELECT * FROM products WHERE featured = 1 LIMIT 4");
+                while ($product = $stmt->fetch()) {
             ?>
-                <div class="product-card">
-                    <img src="<?php echo image('/' . htmlspecialchars($product['image'] ?? '')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
-                    <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                    <p class="price">$<?php echo number_format($product['price'], 2); ?></p>
-                    <a href="<?php echo url('/product.php?id=' . $product['id']); ?>" class="cta-button">View Details</a>
-                </div>
-            <?php } ?>
+                    <div class="product-card">
+                        <img src="<?php echo image('/' . htmlspecialchars($product['image'] ?? '')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                        <h3><?php echo htmlspecialchars($product['name']); ?></h3>
+                        <p class="price">$<?php echo number_format($product['price'], 2); ?></p>
+                        <a href="<?php echo url('/product.php?id=' . $product['id']); ?>" class="cta-button">View Details</a>
+                    </div>
+            <?php 
+                }
+            } catch(PDOException $e) {
+                echo "<p class='error-message'>Error loading products: " . htmlspecialchars($e->getMessage()) . "</p>";
+            }
+            ?>
         </div>
     </section>
 
@@ -57,16 +63,22 @@ $categories_result = $conn->query($categories_query);
         <h2>Shop by Category</h2>
         <div class="category-grid">
             <?php
-            // Fetch categories from database
-            $stmt = $pdo->query("SELECT * FROM categories");
-            while ($category = $stmt->fetch()) {
+            try {
+                // Fetch categories from database
+                $stmt = $pdo->query("SELECT * FROM categories");
+                while ($category = $stmt->fetch()) {
             ?>
-                <div class="category-card">
-                    <img src="<?php echo image('/categories/' . strtolower(str_replace(' ', '-', $category['category'])) . '.jpg'); ?>" alt="<?php echo htmlspecialchars($category['category']); ?>">
-                    <h3><?php echo htmlspecialchars($category['category']); ?></h3>
-                    <a href="<?php echo url('/search.php?category=' . urlencode($category['category'])); ?>" class="cta-button">Browse</a>
-                </div>
-            <?php } ?>
+                    <div class="category-card">
+                        <img src="<?php echo image('/categories/' . strtolower(str_replace(' ', '-', $category['category'])) . '.jpg'); ?>" alt="<?php echo htmlspecialchars($category['category']); ?>">
+                        <h3><?php echo htmlspecialchars($category['category']); ?></h3>
+                        <a href="<?php echo url('/search.php?category=' . urlencode($category['category'])); ?>" class="cta-button">Browse</a>
+                    </div>
+            <?php 
+                }
+            } catch(PDOException $e) {
+                echo "<p class='error-message'>Error loading categories: " . htmlspecialchars($e->getMessage()) . "</p>";
+            }
+            ?>
         </div>
     </section>
 
