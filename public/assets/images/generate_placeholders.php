@@ -25,6 +25,9 @@ function createPlaceholderImage($width, $height, $text, $filename) {
     imagedestroy($image);
 }
 
+// Create hero background image
+createPlaceholderImage(1920, 1080, 'Hero Background', __DIR__ . '/hero-bg.jpg');
+
 // Create product images
 $products = [
     'necklace1.jpg' => 'Necklace',
