@@ -1,37 +1,33 @@
-<footer>
+<?php
+require_once __DIR__ . '/functions.php';
+?>
+    <footer>
         <div class="footer-content">
             <div class="footer-section">
                 <h3>About Us</h3>
-                <ul>
-                    <li><a href="#">Our Story</a></li>
-                    <li><a href="#">Mission</a></li>
-                    <li><a href="#">Artisan Community</a></li>
-                </ul>
+                <p>Artisan Alley is your destination for unique, handcrafted items from talented artisans around the world.</p>
             </div>
             <div class="footer-section">
-                <h3>Customer Service</h3>
+                <h3>Quick Links</h3>
                 <ul>
-                    <li><a href="#">Contact Us</a></li>
-                    <li><a href="#">Shipping Policy</a></li>
-                    <li><a href="#">Returns & Exchanges</a></li>
-                    <li><a href="#">FAQ</a></li>
+                    <li><a href="<?php echo url('/index.php'); ?>">Home</a></li>
+                    <li><a href="<?php echo url('/search.php'); ?>">Explore</a></li>
+                    <li><a href="<?php echo url('/about.php'); ?>">About Us</a></li>
+                    <li><a href="<?php echo url('/contact.php'); ?>">Contact</a></li>
                 </ul>
             </div>
             <div class="footer-section">
                 <h3>Connect With Us</h3>
-                <ul>
-                    <li><a href="#"><i class="fab fa-facebook"></i> Facebook</a></li>
-                    <li><a href="#"><i class="fab fa-instagram"></i> Instagram</a></li>
-                    <li><a href="#"><i class="fab fa-pinterest"></i> Pinterest</a></li>
-                    <li><a href="#"><i class="fab fa-twitter"></i> Twitter</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h3>Newsletter</h3>
-                <p>Subscribe to get updates on new artisans and special offers!</p>
-                <form action="/subscribe.php" method="POST" class="newsletter-form">
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-pinterest"></i></a>
+                </div>
+                <form action="<?php echo url('/subscribe.php'); ?>" method="POST" class="newsletter-form">
+                    <h4>Subscribe to Our Newsletter</h4>
                     <input type="email" name="email" placeholder="Enter your email" required>
-                    <button type="submit">Subscribe</button>
+                    <button type="submit" class="cta-button">Subscribe</button>
                 </form>
             </div>
         </div>
@@ -39,5 +35,6 @@
             <p>&copy; <?php echo date('Y'); ?> Artisan Alley. All rights reserved.</p>
         </div>
     </footer>
+    <script src="<?php echo asset('/js/main.js'); ?>"></script>
 </body>
 </html>
