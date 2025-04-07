@@ -68,7 +68,7 @@ try {
             <?php
             try {
                 // Fetch categories from database
-                $stmt = $pdo->query("SELECT * FROM categories");
+                $stmt = $pdo->query("SELECT category, description FROM categories");
                 while ($category = $stmt->fetch()) {
             ?>
                     <div class="category-card">
