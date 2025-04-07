@@ -8,24 +8,27 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Debug database connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+try {
+    $pdo->query("SELECT 1");
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
 }
 
 // Fetch recent products
-$products_query = "SELECT * FROM products ORDER BY created_at DESC LIMIT 6";
-$products_result = $conn->query($products_query);
-
-// Check for query errors
-if (!$products_result) {
-    die("Error fetching products: " . $conn->error);
+try {
+    $products_query = "SELECT * FROM products ORDER BY created_at DESC LIMIT 6";
+    $products_result = $pdo->query($products_query);
+} catch(PDOException $e) {
+    die("Error fetching products: " . $e->getMessage());
 }
 
-// Debug product count
-
 // Fetch categories
-$categories_query = "SELECT DISTINCT category FROM products LIMIT 6";
-$categories_result = $conn->query($categories_query);
+try {
+    $categories_query = "SELECT DISTINCT category FROM products LIMIT 6";
+    $categories_result = $pdo->query($categories_query);
+} catch(PDOException $e) {
+    die("Error fetching categories: " . $e->getMessage());
+}
 ?>
 
 <main class="homepage">
