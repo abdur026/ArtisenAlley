@@ -6,47 +6,41 @@ require_once '../includes/breadcrumb.php';
 $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $category = isset($_GET['category']) ? $_GET['category'] : '';
 
-$sql = "SELECT * FROM products WHERE 1=1";
-$params = [];
-$types = "";
+try {
+    $sql = "SELECT * FROM products WHERE 1=1";
+    $params = [];
 
-if (!empty($keyword)) {
-    $sql .= " AND (name LIKE ? OR description LIKE ?)";
-    $searchParam = "%" . $keyword . "%";
-    $params[] = $searchParam;
-    $params[] = $searchParam;
-    $types .= "ss";
-}
+    if (!empty($keyword)) {
+        $sql .= " AND (name LIKE ? OR description LIKE ?)";
+        $searchParam = "%" . $keyword . "%";
+        $params[] = $searchParam;
+        $params[] = $searchParam;
+    }
 
-if (!empty($category)) {
-    $sql .= " AND category = ?";
-    $params[] = $category;
-    $types .= "s";
-}
+    if (!empty($category)) {
+        $sql .= " AND category = ?";
+        $params[] = $category;
+    }
 
-$stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$products = [];
-while ($row = $result->fetch_assoc()) {
-    $products[] = $row;
-}
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $products = $stmt->fetchAll();
 
-$categoryQuery = "SELECT DISTINCT category FROM products ORDER BY category";
-$categoryResult = $conn->query($categoryQuery);
-$categories = [];
-while ($row = $categoryResult->fetch_assoc()) {
-    $categories[] = $row['category'];
-}
+    // Get categories
+    $categoryQuery = "SELECT DISTINCT category FROM products ORDER BY category";
+    $categoryStmt = $pdo->query($categoryQuery);
+    $categories = $categoryStmt->fetchAll(PDO::FETCH_COLUMN);
 
-$featuredQuery = "SELECT * FROM products ORDER BY created_at DESC LIMIT 4";
-$featuredResult = $conn->query($featuredQuery);
-$featuredProducts = [];
-while ($row = $featuredResult->fetch_assoc()) {
-    $featuredProducts[] = $row;
+    // Get featured products
+    $featuredQuery = "SELECT * FROM products ORDER BY created_at DESC LIMIT 4";
+    $featuredStmt = $pdo->query($featuredQuery);
+    $featuredProducts = $featuredStmt->fetchAll();
+
+} catch(PDOException $e) {
+    error_log("Database error: " . $e->getMessage());
+    $products = [];
+    $categories = [];
+    $featuredProducts = [];
 }
 ?>
 <!DOCTYPE html>
@@ -55,7 +49,7 @@ while ($row = $featuredResult->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore Artisan Treasures - Artisan Alley</title>
-    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/qrehman/ArtisenAlley/public/assets/css/main.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -83,7 +77,7 @@ while ($row = $featuredResult->fetch_assoc()) {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('/assets/images/pattern.png') repeat;
+            background: url('/qrehman/ArtisenAlley/public/assets/images/pattern.png') repeat;
             opacity: 0.1;
         }
 

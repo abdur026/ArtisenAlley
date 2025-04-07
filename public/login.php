@@ -20,26 +20,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    try {
+        $stmt = $pdo->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
 
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        if (password_verify($password, $user['password'])) {
+        if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role'];
-            header("Location: ../index.php");
+            header("Location: index.php");
             exit;
         } else {
-            $_SESSION['error'] = "Incorrect password.";
+            $_SESSION['error'] = "Invalid email or password.";
             header("Location: login.php");
             exit;
         }
-    } else {
-        $_SESSION['error'] = "User not found.";
+    } catch(PDOException $e) {
+        $_SESSION['error'] = "An error occurred. Please try again.";
         header("Location: login.php");
         exit;
     }
@@ -52,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="/qrehman/ArtisenAlley/public/assets/css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
