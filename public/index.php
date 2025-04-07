@@ -21,14 +21,6 @@ try {
 } catch(PDOException $e) {
     die("Error fetching products: " . $e->getMessage());
 }
-
-// Fetch categories
-try {
-    $categories_query = "SELECT DISTINCT category FROM products LIMIT 6";
-    $categories_result = $pdo->query($categories_query);
-} catch(PDOException $e) {
-    die("Error fetching categories: " . $e->getMessage());
-}
 ?>
 
 <main class="homepage">
