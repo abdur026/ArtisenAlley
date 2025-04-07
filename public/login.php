@@ -21,14 +21,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $stmt = $pdo->prepare("SELECT id, password, name, role FROM users WHERE email = ?");
-        $stmt->execute([$email]);
+        // Debug: Log the attempt
+        error_log("Login attempt for email: " . $email);
+        
+        // Check both email and username
+        $stmt = $pdo->prepare("SELECT id, password, full_name as name, role FROM users WHERE email = ? OR username = ?");
+        $stmt->execute([$email, $email]);
         $user = $stmt->fetch();
+
+        // Debug: Log if user was found
+        error_log("User found: " . ($user ? "Yes" : "No"));
+
+        if ($user) {
+            // Debug: Log password verification
+            error_log("Password verification: " . (password_verify($password, $user['password']) ? "Success" : "Failed"));
+        }
 
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role'];
+            
+            // Debug: Log successful login
+            error_log("Login successful for user: " . $user['name']);
+            
             header("Location: index.php");
             exit;
         } else {
@@ -37,6 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } catch(PDOException $e) {
+        // Debug: Log database error
+        error_log("Database error during login: " . $e->getMessage());
         $_SESSION['error'] = "An error occurred. Please try again.";
         header("Location: login.php");
         exit;
