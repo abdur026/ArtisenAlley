@@ -28,14 +28,32 @@ CREATE TABLE IF NOT EXISTS products (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Shipping details table
+CREATE TABLE IF NOT EXISTS shipping_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    zip VARCHAR(20) NOT NULL,
+    country VARCHAR(50) NOT NULL,
+    phone VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- Orders table
 CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    total_amount DECIMAL(10,2) NOT NULL,
-    status ENUM('pending', 'processing', 'shipped', 'delivered') DEFAULT 'pending',
+    shipping_id INT,
+    total_price DECIMAL(10,2) NOT NULL,
+    payment_method VARCHAR(50) DEFAULT 'credit_card',
+    status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (shipping_id) REFERENCES shipping_details(id)
 );
 
 -- Order items table

@@ -33,6 +33,20 @@ if (!$user['profile_image']) {
         $profile_image_data = null;
     }
 }
+
+// Get user orders
+$orders_query = "
+    SELECT o.*, COUNT(oi.id) as item_count 
+    FROM orders o 
+    LEFT JOIN order_items oi ON o.id = oi.order_id 
+    WHERE o.user_id = ? 
+    GROUP BY o.id 
+    ORDER BY o.created_at DESC
+";
+$stmt = $conn->prepare($orders_query);
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$orders_result = $stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -40,7 +54,7 @@ if (!$user['profile_image']) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Profile - Artisan Alley</title>
-    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/main.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -571,6 +585,65 @@ if (!$user['profile_image']) {
                         <?php endif; ?>
                     </div>
                 </section>
+
+                <!-- Display orders tab content -->
+                <div class="tab-pane" id="orders">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Your Orders</h3>
+                        </div>
+                        <div class="card-body">
+                            <?php if ($orders_result->num_rows > 0): ?>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Date</th>
+                                                <th>Items</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php while ($order = $orders_result->fetch_assoc()): ?>
+                                                <tr>
+                                                    <td><?php echo $order['id']; ?></td>
+                                                    <td><?php echo date('M j, Y', strtotime($order['created_at'])); ?></td>
+                                                    <td><?php echo $order['item_count']; ?></td>
+                                                    <td>$<?php echo number_format($order['total_price'], 2); ?></td>
+                                                    <td>
+                                                        <span class="badge <?php 
+                                                            switch($order['status']) {
+                                                                case 'pending': echo 'bg-warning'; break;
+                                                                case 'processing': echo 'bg-info'; break;
+                                                                case 'shipped': echo 'bg-primary'; break;
+                                                                case 'delivered': echo 'bg-success'; break;
+                                                                case 'cancelled': echo 'bg-danger'; break;
+                                                                default: echo 'bg-secondary';
+                                                            }
+                                                        ?>">
+                                                            <?php echo ucfirst($order['status']); ?>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="order_confirmation.php?order_id=<?php echo $order['id']; ?>" class="btn btn-sm btn-primary">View</a>
+                                                    </td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> You haven't placed any orders yet.
+                                    <a href="index.php" class="alert-link">Start shopping</a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>

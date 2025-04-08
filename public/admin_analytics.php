@@ -292,6 +292,7 @@ if ($sales_result) {
         <nav class="admin-nav">
             <a href="index.php"><i class="fas fa-home"></i> Home</a>
             <a href="admin_dashboard.php"><i class="fas fa-users"></i> Users</a>
+            <a href="admin_orders.php"><i class="fas fa-shopping-cart"></i> Orders</a>
             <a href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
             <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
