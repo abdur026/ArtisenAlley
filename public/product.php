@@ -64,7 +64,7 @@ if (isset($_SESSION['debug'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($product['name']); ?> - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="../src/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -451,17 +451,17 @@ if (isset($_SESSION['debug'])) {
     <nav class="navbar">
         <div class="navbar-content">
             <div>
-                <a href="/index.php">Home</a>
+                <a href="index.php">Home</a>
             </div>
             <div>
-                <a href="/cart.php">
+                <a href="cart.php">
                     <i class="fas fa-shopping-cart"></i> Cart
                 </a>
                 <?php if(isset($_SESSION['user_id'])): ?>
                     <a href="/profile.php">Profile</a>
                     <a href="/logout.php">Logout</a>
                 <?php else: ?>
-                    <a href="/login.php">Login</a>
+                    <a href="login.php">Login</a>
                 <?php endif; ?>
             </div>
         </div>
