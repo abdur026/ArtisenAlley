@@ -95,7 +95,7 @@ $top_users_result = $conn->query($top_users_query);
 $sales_query = "
     SELECT 
         DATE_FORMAT(created_at, '%Y-%m') as month,
-        SUM(total_amount) as revenue
+        SUM(total_price) as revenue
     FROM orders
     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
     GROUP BY DATE_FORMAT(created_at, '%Y-%m')
@@ -310,7 +310,7 @@ if ($sales_result) {
     $today_users = $conn->query("SELECT COUNT(*) as count FROM users WHERE DATE(created_at) = CURDATE()")->fetch_assoc()['count'];
     $today_reviews = $conn->query("SELECT COUNT(*) as count FROM reviews WHERE DATE(created_at) = CURDATE()")->fetch_assoc()['count'];
     $today_orders = $conn->query("SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = CURDATE()")->fetch_assoc()['count'];
-    $today_revenue = $conn->query("SELECT SUM(total_amount) as sum FROM orders WHERE DATE(created_at) = CURDATE()")->fetch_assoc()['sum'] ?? 0;
+    $today_revenue = $conn->query("SELECT SUM(total_price) as sum FROM orders WHERE DATE(created_at) = CURDATE()")->fetch_assoc()['sum'] ?? 0;
     ?>
     
     <div class="stats-grid">

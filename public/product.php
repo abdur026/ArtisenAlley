@@ -458,8 +458,8 @@ if (isset($_SESSION['debug'])) {
                     <i class="fas fa-shopping-cart"></i> Cart
                 </a>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/profile.php">Profile</a>
-                    <a href="/logout.php">Logout</a>
+                    <a href="profile.php">Profile</a>
+                    <a href="logout.php">Logout</a>
                 <?php else: ?>
                     <a href="login.php">Login</a>
                 <?php endif; ?>
