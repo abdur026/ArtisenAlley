@@ -1,4 +1,4 @@
-USE hali07;
+USE qrehman;
 
 -- Insert sample products
 INSERT INTO products (name, description, price, category, image, stock, user_id) VALUES

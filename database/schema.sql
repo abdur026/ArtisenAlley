@@ -1,6 +1,6 @@
 -- Create the database
 
-USE hali07;
+USE qrehman;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
