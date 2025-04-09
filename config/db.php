@@ -1,9 +1,9 @@
 <?php
 // Database configuration
 $servername = "localhost";
-$username = "hali07"; // Change this if needed
-$password = "hali07"; // Change this if needed
-$dbname = "hali07";
+$username = "qrehman"; // UBC server username
+$password = "qrehman"; // UBC server password
+$dbname = "qrehman"; // UBC server database name
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
