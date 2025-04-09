@@ -1,8 +1,8 @@
 <?php
 // Database configuration
 $servername = "localhost";
-$username = "root"; // Change this if needed
-$password = ""; // Change this if needed
+$username = "hali07"; // Change this if needed
+$password = "hali07"; // Change this if needed
 $dbname = "hali07";
 
 // Create connection
