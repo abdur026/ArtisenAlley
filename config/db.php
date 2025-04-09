@@ -1,20 +1,15 @@
 <?php
-// Get the absolute path to the project root
-define('PROJECT_ROOT', dirname(__DIR__));
+require_once __DIR__ . '/config.php';
 
-// Database configuration
-$servername = "localhost";
-$username = "qrehman"; // UBC server username
-$password = "qrehman"; // UBC server password
-$dbname = "qrehman"; // UBC server database name
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+try {
+    $pdo = new PDO(
+        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
+        DB_USER,
+        DB_PASS,
+        array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION)
+    );
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
 }
-
 ?>
 
