@@ -993,7 +993,7 @@ switch ($report_type) {
                                 <td><?php echo $row['item_count']; ?></td>
                                 <td>$<?php echo number_format($row['total_price'], 2); ?></td>
                                 <td>
-                                    <a href="#" class="badge badge-admin">
+                                    <a href="admin_orders.php?view=<?php echo $row['id']; ?>" class="badge badge-admin">
                                         <i class="fas fa-eye"></i> View
                                     </a>
                                 </td>
