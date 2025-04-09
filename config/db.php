@@ -11,9 +11,9 @@ if ($is_ubc_server) {
     $dbname = "qrehman";
 } else {
     // Local development credentials
-    $username = "root";  // Your local MySQL username
-    $password = "";      // Your local MySQL password
-    $dbname = "artisenalley";  // Your local database name
+    $username = "hali07";  // Your existing MySQL username
+    $password = "hali07";  // Your existing MySQL password
+    $dbname = "hali07";    // Your existing database name
 }
 
 // Create connection
