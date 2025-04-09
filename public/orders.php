@@ -19,18 +19,33 @@ $error_message = "";
 $orders_result = null;
 
 try {
-    // Get user's orders with order items count - simplifying the query to avoid errors
+    // Get user's orders with improved error handling
     $stmt = $conn->prepare("
-        SELECT o.* 
+        SELECT o.id, o.total_price, o.status, o.created_at
         FROM orders o 
         WHERE o.user_id = ? 
         ORDER BY o.created_at DESC
     ");
+    
+    if (!$stmt) {
+        throw new Exception("Database prepare error: " . $conn->error);
+    }
+    
     $stmt->bind_param("i", $_SESSION['user_id']);
-    $stmt->execute();
+    
+    if (!$stmt->execute()) {
+        throw new Exception("Database execute error: " . $stmt->error);
+    }
+    
     $orders_result = $stmt->get_result();
+    
+    if (!$orders_result) {
+        throw new Exception("Failed to get result set: " . $stmt->error);
+    }
 } catch (Exception $e) {
     $error_message = "Database error: " . $e->getMessage();
+    // Log the actual error for debugging
+    error_log("Orders query error for user ID " . $_SESSION['user_id'] . ": " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
@@ -201,7 +216,10 @@ try {
     </style>
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php 
+    try {
+        include '../includes/header.php'; 
+    ?>
 
     <div class="orders-container">
         <?php
@@ -211,7 +229,12 @@ try {
             ['name' => 'Profile', 'url' => 'profile.php'],
             ['name' => 'My Orders']
         ];
-        echo generate_breadcrumbs($breadcrumbs);
+        try {
+            echo generate_breadcrumbs($breadcrumbs);
+        } catch (Exception $e) {
+            error_log("Breadcrumb error: " . $e->getMessage());
+            // No need to display this error to the user
+        }
         ?>
 
         <div class="orders-header">
@@ -256,7 +279,7 @@ try {
                                 $items_stmt = $conn->prepare("
                                     SELECT p.name, oi.quantity 
                                     FROM order_items oi 
-                                    JOIN products p ON oi.product_id = p.id 
+                                    LEFT JOIN products p ON oi.product_id = p.id 
                                     WHERE oi.order_id = ?
                                 ");
                                 $items_stmt->bind_param("i", $order['id']);
@@ -265,11 +288,21 @@ try {
                                 
                                 $items_list = [];
                                 while ($item = $items_result->fetch_assoc()) {
-                                    $items_list[] = htmlspecialchars($item['name'] . ' (' . $item['quantity'] . ')');
+                                    // Add null check to prevent undefined index errors
+                                    $name = isset($item['name']) ? $item['name'] : 'Unknown Product';
+                                    $quantity = isset($item['quantity']) ? $item['quantity'] : 0;
+                                    $items_list[] = htmlspecialchars($name . ' (' . $quantity . ')');
                                 }
-                                echo implode(', ', $items_list);
+                                
+                                if (empty($items_list)) {
+                                    echo "<span>No items found for this order</span>";
+                                } else {
+                                    echo implode(', ', $items_list);
+                                }
                             } catch (Exception $e) {
-                                echo "<span class='text-danger'>Error loading order items: " . $e->getMessage() . "</span>";
+                                echo "<span class='text-danger'>Error loading order items</span>";
+                                // Log the actual error for debugging
+                                error_log("Order items error for order ID " . $order['id'] . ": " . $e->getMessage());
                             }
                             ?>
                         </div>
@@ -300,6 +333,26 @@ try {
         <?php endif; ?>
     </div>
 
-    <?php include '../includes/footer.php'; ?>
+    <?php 
+        include '../includes/footer.php';
+    } catch (Exception $e) {
+        // Log the error but show a user-friendly message
+        error_log("Unexpected error in orders.php: " . $e->getMessage());
+    ?>
+        <div class="orders-container" style="text-align: center; padding: 50px;">
+            <h2>We're sorry!</h2>
+            <p>Something went wrong while loading your orders. Please try again later.</p>
+            <a href="index.php" class="btn btn-primary">Return to Home Page</a>
+        </div>
+    <?php
+        // Still try to include the footer
+        try {
+            include '../includes/footer.php';
+        } catch (Exception $e) {
+            // Just silently log this error
+            error_log("Footer inclusion error: " . $e->getMessage());
+        }
+    }
+    ?>
 </body>
 </html> 
