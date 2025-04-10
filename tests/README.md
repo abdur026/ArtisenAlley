@@ -1,0 +1,43 @@
+# ArtisenAlley Unit Tests
+
+This directory contains unit tests for the ArtisenAlley marketplace application. These tests are designed to verify the functionality of key components without affecting the production environment.
+
+## Test Structure
+
+- `bootstrap.php` - Sets up the test environment
+- `TestUtils.php` - Contains utility functions and mocks for testing
+- `run.php` - Script to run all tests
+- `unit/` - Directory containing all unit tests
+
+## Running Tests
+
+To run all tests, execute the following command from the project root:
+
+```bash
+php tests/run.php
+```
+
+## Available Tests
+
+- **ProductUtilsTest.php** - Tests the product utility functions (average rating calculation)
+- **ImageUtilsTest.php** - Tests image utility functions (profile image encoding)
+- **CsrfTest.php** - Tests CSRF protection utilities
+- **DatabaseTest.php** - Tests database operations with mock objects
+
+## Writing New Tests
+
+1. Create a new test file in the `unit/` directory with a name ending in `Test.php`
+2. Include the bootstrap and utility files:
+   ```php
+   require_once __DIR__ . '/../bootstrap.php';
+   require_once __DIR__ . '/../TestUtils.php';
+   ```
+3. Use the `assert_true()` function for assertions
+4. Your test will be automatically discovered by the test runner
+
+## Important Notes
+
+- These tests are designed to run **without affecting the production database**
+- Most database tests use mock objects instead of real connections
+- Tests are completely isolated from the main application code
+- No production code was modified to implement these tests 
