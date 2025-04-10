@@ -332,14 +332,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/public/index.php">Home</a>
+            <a href="index.php">Home</a>
             <div>
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <a href="/public/profile.php">Profile</a>
-                    <a href="/public/logout.php">Logout</a>
+                    <a href="profile.php">Profile</a>
+                    <a href="logout.php">Logout</a>
                 <?php else: ?>
-                    <a href="/public/login.php">Login</a>
-                    <a href="/public/register.php">Register</a>
+                    <a href="login.php">Login</a>
+                    <a href="register.php">Register</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -363,7 +363,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-shopping-basket"></i>
                 <h2>Your cart is empty</h2>
                 <p>Looks like you haven't added any items to your cart yet.</p>
-                <a href="/public/index.php" class="continue-shopping">
+                <a href="index.php" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
             </div>
@@ -427,10 +427,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>Total</span>
                     <span>$<?php echo number_format($grandTotal, 2); ?></span>
                 </div>
-                <a href="/public/checkout.php" class="checkout-btn">
+                <a href="checkout.php" class="checkout-btn">
                     <i class="fas fa-lock"></i> Proceed to Checkout
                 </a>
-                <a href="/public/index.php" class="continue-shopping">
+                <a href="index.php" class="continue-shopping">
                     <i class="fas fa-arrow-left"></i> Continue Shopping
                 </a>
             </div>

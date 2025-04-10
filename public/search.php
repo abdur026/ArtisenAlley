@@ -55,7 +55,7 @@ while ($row = $featuredResult->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore Artisan Treasures - Artisan Alley</title>
-    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/main.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -83,7 +83,7 @@ while ($row = $featuredResult->fetch_assoc()) {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('/assets/images/pattern.png') repeat;
+            background: url('assets/images/pattern.png') repeat;
             opacity: 0.1;
         }
 
@@ -385,9 +385,7 @@ while ($row = $featuredResult->fetch_assoc()) {
     </style>
 </head>
 <body>
-    <header>
-        <h1>Search Results</h1>
-    </header>
+    <?php include '../includes/header.php'; ?>
 
     <?php
     // Generate breadcrumbs
@@ -445,7 +443,8 @@ while ($row = $featuredResult->fetch_assoc()) {
                                 <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
                                 <div class="product-actions">
                                     <a href="product.php?id=<?php echo $product['id']; ?>" class="view-btn">View Details</a>
-                                    <form action="add_to_cart.php" method="POST" class="add-to-cart-form">
+                                    <form action="cart.php" method="POST" class="add-to-cart-form">
+                                        <input type="hidden" name="action" value="add">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                         <input type="hidden" name="quantity" value="1">
                                         <button type="submit" class="add-to-cart-btn"><i class="fas fa-shopping-cart"></i></button>
@@ -516,7 +515,8 @@ while ($row = $featuredResult->fetch_assoc()) {
                                 <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
                                 <div class="product-actions">
                                     <a href="product.php?id=<?php echo $product['id']; ?>" class="view-btn">View Details</a>
-                                    <form action="add_to_cart.php" method="POST" class="add-to-cart-form">
+                                    <form action="cart.php" method="POST" class="add-to-cart-form">
+                                        <input type="hidden" name="action" value="add">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                         <input type="hidden" name="quantity" value="1">
                                         <button type="submit" class="add-to-cart-btn"><i class="fas fa-shopping-cart"></i></button>

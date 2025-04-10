@@ -40,9 +40,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Create uploads directory if it doesn't exist
-        $upload_dir = '../uploads/';
+        // Use an absolute path based on the current script directory
+        $base_dir = dirname(dirname(__FILE__)); // Go up one level from public to get project root
+        $upload_dir = $base_dir . '/uploads/';
+        
         if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0755, true);
+            if (!mkdir($upload_dir, 0777, true)) {
+                $_SESSION['error'] = "Failed to create upload directory. Please contact the administrator.";
+                header("Location: register.php");
+                exit;
+            }
+            chmod($upload_dir, 0777); // Make sure it's writable
+        }
+        
+        // For debugging, check if the directory is writable
+        if (!is_writable($upload_dir)) {
+            $_SESSION['error'] = "Upload directory is not writable. Path: " . $upload_dir;
+            header("Location: register.php");
+            exit;
         }
         
         // Generate unique filename
@@ -53,12 +68,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $upload_path)) {
             $profile_image = $filename;
         } else {
-            $_SESSION['error'] = "Failed to upload image. Please try again.";
+            // Get more detailed error information
+            $upload_error = error_get_last();
+            $_SESSION['error'] = "Failed to upload image: " . 
+                                (is_writable($upload_dir) ? "Directory is writable." : "Directory is not writable.") .
+                                " Error: " . ($upload_error ? $upload_error['message'] : "Unknown error");
             header("Location: register.php");
             exit;
         }
     } else {
-        $_SESSION['error'] = "Profile image is required. Please upload an image.";
+        // Get specific error based on the error code
+        $error_message = "Profile image upload failed: ";
+        
+        if (!isset($_FILES['profile_image'])) {
+            $error_message .= "No file was uploaded.";
+        } else {
+            switch ($_FILES['profile_image']['error']) {
+                case UPLOAD_ERR_INI_SIZE:
+                    $error_message .= "The uploaded file exceeds the upload_max_filesize directive in php.ini.";
+                    break;
+                case UPLOAD_ERR_FORM_SIZE:
+                    $error_message .= "The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form.";
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $error_message .= "The uploaded file was only partially uploaded.";
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $error_message .= "No file was uploaded.";
+                    break;
+                case UPLOAD_ERR_NO_TMP_DIR:
+                    $error_message .= "Missing a temporary folder.";
+                    break;
+                case UPLOAD_ERR_CANT_WRITE:
+                    $error_message .= "Failed to write file to disk.";
+                    break;
+                case UPLOAD_ERR_EXTENSION:
+                    $error_message .= "A PHP extension stopped the file upload.";
+                    break;
+                default:
+                    $error_message .= "Unknown upload error.";
+            }
+        }
+        
+        $_SESSION['error'] = $error_message;
         header("Location: register.php");
         exit;
     }
@@ -86,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Artisan Alley</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="../src/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -391,7 +443,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php echo csrf_token_field('register_form'); ?>
             
             <div class="image-preview-container">
-                <img id="preview-image" src="/assets/images/default-avatar.png" alt="Profile Preview" class="image-preview">
+                <img id="preview-image" src="assets/images/placeholder.jpg" alt="Profile Preview" class="image-preview">
             </div>
             
             <div class="form-group">
@@ -478,7 +530,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 };
                 reader.readAsDataURL(input.files[0]);
             } else {
-                preview.src = '/assets/images/default-avatar.png';
+                preview.src = 'assets/images/placeholder.jpg';
                 fileNameSpan.textContent = 'Choose a profile picture';
             }
         }

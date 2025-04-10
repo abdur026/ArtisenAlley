@@ -1,7 +1,12 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 session_start();
 require_once '../config/db.php';
 require_once '../includes/utils/csrf.php';
+
+
+date_default_timezone_set('America/Vancouver');
 
 // Redirect if not admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
@@ -10,49 +15,39 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 }
 
 // Get user registration stats by month (last 6 months)
-$user_stats_query = "
+$user_query = "
     SELECT 
         DATE_FORMAT(created_at, '%Y-%m') as month,
         COUNT(*) as count
     FROM users
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
     GROUP BY DATE_FORMAT(created_at, '%Y-%m')
     ORDER BY month ASC
 ";
-$user_stats_result = $conn->query($user_stats_query);
-$user_stats = [];
-$user_labels = [];
+$user_result = $conn->query($user_query);
 $user_data = [];
-
-if ($user_stats_result) {
-    while ($row = $user_stats_result->fetch_assoc()) {
-        $user_labels[] = date('M Y', strtotime($row['month'] . '-01'));
-        $user_data[] = $row['count'];
-    }
+while ($row = $user_result->fetch_assoc()) {
+    $user_data[$row['month']] = $row['count'];
 }
 
 // Get review stats by month (last 6 months)
-$review_stats_query = "
+$review_query = "
     SELECT 
         DATE_FORMAT(created_at, '%Y-%m') as month,
         COUNT(*) as count,
         AVG(rating) as avg_rating
     FROM reviews
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
     GROUP BY DATE_FORMAT(created_at, '%Y-%m')
     ORDER BY month ASC
 ";
-$review_stats_result = $conn->query($review_stats_query);
-$review_labels = [];
+$review_result = $conn->query($review_query);
 $review_data = [];
-$rating_data = [];
-
-if ($review_stats_result) {
-    while ($row = $review_stats_result->fetch_assoc()) {
-        $review_labels[] = date('M Y', strtotime($row['month'] . '-01'));
-        $review_data[] = $row['count'];
-        $rating_data[] = round($row['avg_rating'], 1);
-    }
+while ($row = $review_result->fetch_assoc()) {
+    $review_data[$row['month']] = [
+        'count' => $row['count'],
+        'avg_rating' => $row['avg_rating']
+    ];
 }
 
 // Get top 5 products by review count
@@ -60,12 +55,13 @@ $top_products_query = "
     SELECT 
         p.id,
         p.name,
+        p.image,
         COUNT(r.id) as review_count,
         AVG(r.rating) as avg_rating
     FROM products p
-    LEFT JOIN reviews r ON p.id = r.product_id
+    JOIN reviews r ON p.id = r.product_id
     GROUP BY p.id
-    ORDER BY review_count DESC, avg_rating DESC
+    ORDER BY review_count DESC
     LIMIT 5
 ";
 $top_products_result = $conn->query($top_products_query);
@@ -76,15 +72,12 @@ $top_users_query = "
         u.id,
         u.name,
         u.email,
-        COUNT(DISTINCT r.id) as review_count,
-        COUNT(DISTINCT o.id) as order_count,
-        (COUNT(DISTINCT r.id) + COUNT(DISTINCT o.id)) as activity_score
+        u.profile_image,
+        (SELECT COUNT(*) FROM reviews WHERE user_id = u.id) as review_count,
+        (SELECT COUNT(*) FROM orders WHERE user_id = u.id) as order_count
     FROM users u
-    LEFT JOIN reviews r ON u.id = r.user_id
-    LEFT JOIN orders o ON u.id = o.user_id
-    WHERE u.role != 'admin'
-    GROUP BY u.id
-    ORDER BY activity_score DESC
+    WHERE u.role = 'user'
+    ORDER BY review_count + order_count DESC
     LIMIT 5
 ";
 $top_users_result = $conn->query($top_users_query);
@@ -93,21 +86,20 @@ $top_users_result = $conn->query($top_users_query);
 $sales_query = "
     SELECT 
         DATE_FORMAT(created_at, '%Y-%m') as month,
-        SUM(total_price) as revenue
+        SUM(total_price) as revenue,
+        COUNT(*) as order_count
     FROM orders
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
     GROUP BY DATE_FORMAT(created_at, '%Y-%m')
     ORDER BY month ASC
 ";
 $sales_result = $conn->query($sales_query);
-$sales_labels = [];
 $sales_data = [];
-
-if ($sales_result) {
-    while ($row = $sales_result->fetch_assoc()) {
-        $sales_labels[] = date('M Y', strtotime($row['month'] . '-01'));
-        $sales_data[] = $row['revenue'];
-    }
+while ($row = $sales_result->fetch_assoc()) {
+    $sales_data[$row['month']] = [
+        'revenue' => $row['revenue'],
+        'order_count' => $row['order_count']
+    ];
 }
 ?>
 <!DOCTYPE html>
@@ -115,7 +107,7 @@ if ($sales_result) {
 <head>
     <meta charset="UTF-8">
     <title>Analytics Dashboard - Admin</title>
-    <link rel="stylesheet" href="/src/main.css">
+    <link rel="stylesheet" href="../src/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -290,6 +282,10 @@ if ($sales_result) {
         <nav class="admin-nav">
             <a href="index.php"><i class="fas fa-home"></i> Home</a>
             <a href="admin_dashboard.php"><i class="fas fa-users"></i> Users</a>
+            <a href="admin_analytics.php"><i class="fas fa-chart-line"></i> Analytics</a>
+            <a href="admin_orders.php"><i class="fas fa-shopping-cart"></i> Orders</a>
+            <a href="admin_products.php"><i class="fas fa-box"></i> Products</a>
+            <a href="admin_hot_threads.php"><i class="fas fa-fire"></i> Hot Threads</a>
             <a href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
             <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
@@ -451,7 +447,7 @@ if ($sales_result) {
                             <?php while ($user = $top_users_result->fetch_assoc()): ?>
                                 <?php 
                                     $max_activity = 100; // Benchmark for 100%
-                                    $activity_percentage = min(100, ($user['activity_score'] / $max_activity) * 100);
+                                    $activity_percentage = min(100, ($user['review_count'] + $user['order_count']) / ($max_activity * 2) * 100);
                                 ?>
                                 <tr>
                                     <td>
@@ -480,12 +476,16 @@ if ($sales_result) {
     </div>
 
     <script>
+        console.log('Chart.js script running');
+        console.log('User data:', <?php echo json_encode($user_data); ?>);
+        console.log('Review data:', <?php echo json_encode($review_data); ?>);
+        
         // User Growth Chart
         const userCtx = document.getElementById('userGrowthChart').getContext('2d');
         const userGrowthChart = new Chart(userCtx, {
             type: 'line',
             data: {
-                labels: <?php echo json_encode($user_labels); ?>,
+                labels: <?php echo json_encode(array_keys($user_data)); ?>,
                 datasets: [{
                     label: 'New Users',
                     data: <?php echo json_encode($user_data); ?>,
@@ -528,10 +528,10 @@ if ($sales_result) {
         const reviewActivityChart = new Chart(reviewCtx, {
             type: 'bar',
             data: {
-                labels: <?php echo json_encode($review_labels); ?>,
+                labels: <?php echo json_encode(array_keys($review_data)); ?>,
                 datasets: [{
                     label: 'Reviews',
-                    data: <?php echo json_encode($review_data); ?>,
+                    data: <?php echo json_encode(array_column($review_data, 'count')); ?>,
                     backgroundColor: 'rgba(46, 204, 113, 0.2)',
                     borderColor: 'rgba(46, 204, 113, 1)',
                     borderWidth: 2
@@ -566,10 +566,10 @@ if ($sales_result) {
         const revenueChart = new Chart(revenueCtx, {
             type: 'line',
             data: {
-                labels: <?php echo json_encode($sales_labels); ?>,
+                labels: <?php echo json_encode(array_keys($sales_data)); ?>,
                 datasets: [{
                     label: 'Revenue',
-                    data: <?php echo json_encode($sales_data); ?>,
+                    data: <?php echo json_encode(array_column($sales_data, 'revenue')); ?>,
                     backgroundColor: 'rgba(155, 89, 182, 0.2)',
                     borderColor: 'rgba(155, 89, 182, 1)',
                     borderWidth: 2,
@@ -622,10 +622,10 @@ if ($sales_result) {
         const ratingChart = new Chart(ratingCtx, {
             type: 'line',
             data: {
-                labels: <?php echo json_encode($review_labels); ?>,
+                labels: <?php echo json_encode(array_keys($review_data)); ?>,
                 datasets: [{
                     label: 'Average Rating',
-                    data: <?php echo json_encode($rating_data); ?>,
+                    data: <?php echo json_encode(array_column($review_data, 'avg_rating')); ?>,
                     backgroundColor: 'rgba(241, 196, 15, 0.2)',
                     borderColor: 'rgba(241, 196, 15, 1)',
                     borderWidth: 2,
