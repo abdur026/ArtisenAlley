@@ -3,21 +3,17 @@ session_start();
 require_once '../config/db.php';
 require_once '../includes/utils/csrf.php';
 
-// For debugging: Enable full error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Redirect if not admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header("Location: index.php");
     exit;
 }
 
-// Handle product deletion
 if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['product_id'])) {
     $product_id = intval($_POST['product_id']);
     
-    // First, check if there are any order_items references from shipped orders
     $stmt = $conn->prepare("
         SELECT o.id, o.status, oi.id as order_item_id
         FROM order_items oi 
@@ -28,20 +24,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
     $stmt->execute();
     $result = $stmt->get_result();
     
-    // Debug information about product references
     $order_references = [];
     while ($row = $result->fetch_assoc()) {
         $order_references[] = $row;
     }
     
     if (!empty($order_references)) {
-        $debug_info = "Product has " . count($order_references) . " order references. ";
-        $debug_info .= "Order statuses: ";
-        foreach ($order_references as $ref) {
-            $debug_info .= "Order #{$ref['id']} ({$ref['status']}), ";
-        }
-        
-        // Only prevent deletion if there are pending orders
         $has_pending = false;
         foreach ($order_references as $ref) {
             if ($ref['status'] === 'pending') {
@@ -57,7 +45,6 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
         }
     }
     
-    // Get the image filename before deleting the product
     $stmt = $conn->prepare("SELECT image FROM products WHERE id = ?");
     $stmt->bind_param("i", $product_id);
     $stmt->execute();
@@ -70,18 +57,13 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
         exit;
     }
     
-    // Get the database name from the connection
-    $dbName = 'hali07'; // using the known database name from config/db.php
+    $dbName = 'hali07';
     
-    // Delete the product
     try {
-        // Begin transaction
         $conn->begin_transaction();
         
-        // Delete records from tables that reference the product - only if they exist
         $deletion_counts = [];
         
-        // Check if order_items table exists and delete from it
         $result = $conn->query("SHOW TABLES FROM `hali07` LIKE 'order_items'");
         if ($result->num_rows > 0) {
             $stmt = $conn->prepare("DELETE FROM order_items WHERE product_id = ?");
@@ -92,7 +74,6 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
             $deletion_counts['order_items'] = 0;
         }
         
-        // Check if reviews table exists and delete from it
         $result = $conn->query("SHOW TABLES FROM `hali07` LIKE 'reviews'");
         if ($result->num_rows > 0) {
             $stmt = $conn->prepare("DELETE FROM reviews WHERE product_id = ?");
@@ -103,16 +84,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
             $deletion_counts['reviews'] = 0;
         }
         
-        // We'll skip the wishlist table since it doesn't exist
-        
-        // Then delete the product
         $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
         $stmt->bind_param("i", $product_id);
         $result = $stmt->execute();
         $affected_products = $stmt->affected_rows;
         
         if ($result && $affected_products > 0) {
-            // Delete the image file if it's not the default
             if ($product['image'] && $product['image'] !== 'default_product.png' && $product['image'] !== 'placeholder.jpg') {
                 $image_path = "../uploads/" . $product['image'];
                 if (file_exists($image_path)) {
@@ -120,7 +97,6 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
                 }
             }
             
-            // Commit the transaction
             $conn->commit();
             $_SESSION['success'] = "Product deleted successfully!";
         } else {
@@ -136,16 +112,13 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
     exit;
 }
 
-// Get all products with pagination
 $products_per_page = 10;
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $offset = ($page - 1) * $products_per_page;
 
-// Get total products count
 $total_products = $conn->query("SELECT COUNT(*) as count FROM products")->fetch_assoc()['count'];
 $total_pages = ceil($total_products / $products_per_page);
 
-// Get products for current page
 $products_query = "SELECT * FROM products ORDER BY created_at DESC LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($products_query);
 $stmt->bind_param("ii", $products_per_page, $offset);
@@ -367,9 +340,7 @@ $products_result = $stmt->get_result();
         }
     </style>
     <script>
-        // Custom confirmation dialog for product deletion
         function confirmDelete(productId, productName) {
-            // Create modal background
             const modal = document.createElement('div');
             modal.style.position = 'fixed';
             modal.style.top = '0';
@@ -382,7 +353,6 @@ $products_result = $stmt->get_result();
             modal.style.justifyContent = 'center';
             modal.style.alignItems = 'center';
             
-            // Create modal content
             const modalContent = document.createElement('div');
             modalContent.style.backgroundColor = 'white';
             modalContent.style.borderRadius = '8px';
@@ -391,25 +361,21 @@ $products_result = $stmt->get_result();
             modalContent.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
             modalContent.style.textAlign = 'center';
             
-            // Create heading
             const heading = document.createElement('h3');
             heading.innerText = 'Delete Product';
             heading.style.margin = '0 0 15px 0';
             heading.style.color = '#2c3e50';
             
-            // Create message
             const message = document.createElement('p');
             message.innerHTML = `Are you sure you want to delete <strong>${productName}</strong>?<br>This action cannot be undone.`;
             message.style.marginBottom = '20px';
             message.style.color = '#555';
             
-            // Create buttons container
             const buttonContainer = document.createElement('div');
             buttonContainer.style.display = 'flex';
             buttonContainer.style.justifyContent = 'center';
             buttonContainer.style.gap = '15px';
             
-            // Create cancel button
             const cancelButton = document.createElement('button');
             cancelButton.innerText = 'Cancel';
             cancelButton.style.padding = '10px 20px';
@@ -420,7 +386,6 @@ $products_result = $stmt->get_result();
             cancelButton.style.cursor = 'pointer';
             cancelButton.style.fontWeight = '600';
             
-            // Create delete button
             const deleteButton = document.createElement('button');
             deleteButton.innerText = 'Delete';
             deleteButton.style.padding = '10px 20px';
@@ -431,13 +396,11 @@ $products_result = $stmt->get_result();
             deleteButton.style.cursor = 'pointer';
             deleteButton.style.fontWeight = '600';
             
-            // Add event listeners
             cancelButton.addEventListener('click', () => {
                 document.body.removeChild(modal);
             });
             
             deleteButton.addEventListener('click', () => {
-                // Submit the delete form
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.style.display = 'none';
@@ -458,7 +421,6 @@ $products_result = $stmt->get_result();
                 form.submit();
             });
             
-            // Assemble modal
             buttonContainer.appendChild(cancelButton);
             buttonContainer.appendChild(deleteButton);
             
@@ -469,7 +431,7 @@ $products_result = $stmt->get_result();
             modal.appendChild(modalContent);
             document.body.appendChild(modal);
             
-            return false; // Prevent form submission
+            return false;
         }
     </script>
 </head>

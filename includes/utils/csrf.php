@@ -1,15 +1,7 @@
 <?php
-/**
- * CSRF Protection Utilities
- * Provides functions for generating and validating CSRF tokens
- */
+// CSRF Protection Utilities
 
-/**
- * Generate a CSRF token and store it in the session
- * 
- * @param string $form_name Optional form identifier for multiple forms
- * @return string The generated token
- */
+// Generate CSRF token and store in session
 function generate_csrf_token($form_name = 'default') {
     if (!isset($_SESSION)) {
         session_start();
@@ -31,13 +23,7 @@ function generate_csrf_token($form_name = 'default') {
     return $token;
 }
 
-/**
- * Validate a CSRF token from a form submission
- * 
- * @param string $token The token to validate
- * @param string $form_name Optional form identifier
- * @return bool Whether the token is valid
- */
+// Validate a CSRF token from a form submission
 function validate_csrf_token($token, $form_name = 'default') {
     if (!isset($_SESSION)) {
         session_start();
@@ -67,12 +53,7 @@ function validate_csrf_token($token, $form_name = 'default') {
     return $valid;
 }
 
-/**
- * Output a CSRF token field for a form
- * 
- * @param string $form_name Optional form identifier
- * @return string HTML input field containing the token
- */
+// Output a CSRF token field for a form
 function csrf_token_field($form_name = 'default') {
     $token = generate_csrf_token($form_name);
     return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token) . '">';

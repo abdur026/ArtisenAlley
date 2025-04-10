@@ -3,13 +3,11 @@ session_start();
 require_once '../config/db.php';
 require_once '../includes/utils/csrf.php';
 
-// Redirect if not admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header("Location: index.php");
     exit;
 }
 
-// Process status update if form submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     if (isset($_POST['csrf_token']) && isset($_POST['order_id'])) {
         $order_id = intval($_POST['order_id']);
@@ -18,7 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         if (validate_csrf_token($_POST['csrf_token'], $form_id)) {
             $new_status = $_POST['status'];
             
-            // Validate status
             $valid_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
             if (in_array($new_status, $valid_statuses)) {
                 $stmt = $conn->prepare("UPDATE orders SET status = ? WHERE id = ?");
@@ -39,19 +36,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $_SESSION['error'] = "Missing required parameters";
     }
     
-    // Redirect to maintain RESTful behavior
     header("Location: admin_orders.php");
     exit;
 }
 
-// Handle filtering and pagination
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $limit = 20;
 $offset = ($page - 1) * $limit;
 
-// Build query conditions
 $conditions = [];
 $params = [];
 $types = '';
@@ -72,7 +66,6 @@ if (!empty($search)) {
 
 $where_clause = empty($conditions) ? "" : "WHERE " . implode(" AND ", $conditions);
 
-// Count total records for pagination
 $count_query = "
     SELECT COUNT(*) as total 
     FROM orders o
@@ -92,7 +85,6 @@ if (!empty($params)) {
 $total_orders = $count_result->fetch_assoc()['total'];
 $total_pages = ceil($total_orders / $limit);
 
-// Get orders for current page
 $order_query = "
     SELECT 
         o.id,
@@ -126,7 +118,6 @@ $stmt->bind_param($query_types, ...$query_params);
 $stmt->execute();
 $orders_result = $stmt->get_result();
 
-// Get order statistics
 $stats_query = "
     SELECT 
         COUNT(*) as total_orders,
@@ -143,7 +134,6 @@ $stats_query = "
 $stats_result = $conn->query($stats_query);
 $stats = $stats_result->fetch_assoc();
 
-// Add error handling for missing data
 foreach (['total_orders', 'total_revenue', 'avg_order_value', 'unique_customers', 
          'pending_orders', 'processing_orders', 'shipped_orders', 'delivered_orders', 
          'cancelled_orders'] as $key) {
@@ -577,7 +567,6 @@ foreach (['total_orders', 'total_revenue', 'avg_order_value', 'unique_customers'
                             <td>
                                 <form action="admin_orders.php" method="POST" style="display: inline-block;">
                                     <?php 
-                                    // Use a unique form identifier for each order
                                     $form_id = 'admin_order_form_' . $order['id'];
                                     echo csrf_token_field($form_id); 
                                     ?>
@@ -622,7 +611,6 @@ foreach (['total_orders', 'total_revenue', 'avg_order_value', 'unique_customers'
             
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                 <?php 
-                // Show limited page numbers with ellipsis
                 if ($i == 1 || $i == $total_pages || ($i >= $page - 2 && $i <= $page + 2)) :
                 ?>
                     <li class="page-item <?php echo $i == $page ? 'active' : ''; ?>">
@@ -646,16 +634,7 @@ foreach (['total_orders', 'total_revenue', 'avg_order_value', 'unique_customers'
     <?php endif; ?>
     
     <script>
-        // Remove automatic submission on select change - this was causing the issue
-        /*
-        document.querySelectorAll('select[name="status"]').forEach(select => {
-            select.addEventListener('change', function() {
-                if (this.form.querySelector('input[name="order_id"]')) {
-                    this.form.submit();
-                }
-            });
-        });
-        */
+        // JavaScript code was here
     </script>
 </body>
 </html> 
