@@ -368,9 +368,10 @@ $orders_result = $stmt->get_result();
 
     <div class="user-profile">
         <div class="user-sidebar">
-            <img src="<?php echo $user['profile_image'] ? '/uploads/' . htmlspecialchars($user['profile_image']) : '/assets/images/default-avatar.png'; ?>" 
+            <img src="<?php echo $user['profile_image'] ? '../uploads/' . htmlspecialchars($user['profile_image']) : '../assets/images/default-avatar.png'; ?>" 
                  alt="<?php echo htmlspecialchars($user['name']); ?>" 
-                 class="user-avatar">
+                 class="user-avatar"
+                 onerror="this.src='../assets/images/default-avatar.png'">
             
             <div class="user-info">
                 <h1 class="user-name"><?php echo htmlspecialchars($user['name']); ?></h1>
@@ -412,10 +413,10 @@ $orders_result = $stmt->get_result();
                             <div class="review-card">
                                 <div class="review-header">
                                     <div class="review-product">
-                                        <img src="/assets/images/<?php echo htmlspecialchars($review['product_image']); ?>" 
+                                        <img src="../assets/images/<?php echo htmlspecialchars($review['product_image']); ?>" 
                                              alt="<?php echo htmlspecialchars($review['product_name']); ?>" 
                                              class="product-image"
-                                             onerror="this.src='/assets/images/placeholder.jpg'">
+                                             onerror="this.src='../assets/images/placeholder.jpg'">
                                         <span class="product-name"><?php echo htmlspecialchars($review['product_name']); ?></span>
                                     </div>
                                     <div class="review-rating">
