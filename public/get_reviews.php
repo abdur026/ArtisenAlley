@@ -27,6 +27,15 @@ $result = $stmt->get_result();
 
 $new_reviews = [];
 while ($review = $result->fetch_assoc()) {
+    // Get profile image as base64 if it exists
+    $profile_image_base64 = null;
+    if ($review['profile_image']) {
+        $image_path = "../uploads/" . $review['profile_image'];
+        if (file_exists($image_path)) {
+            $profile_image_base64 = base64_encode(file_get_contents($image_path));
+        }
+    }
+    
     // Format the review data
     $new_reviews[] = [
         'id' => $review['id'],
@@ -34,7 +43,8 @@ while ($review = $result->fetch_assoc()) {
         'comment' => $review['comment'],
         'created_at' => $review['created_at'],
         'reviewer_name' => $review['reviewer_name'],
-        'profile_image' => $review['profile_image']
+        'profile_image' => $review['profile_image'],
+        'profile_image_base64' => $profile_image_base64
     ];
 }
 

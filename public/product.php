@@ -5,7 +5,7 @@ require_once '../includes/breadcrumb.php';
 require_once '../includes/utils/csrf.php';
 
 // Enable debugging temporarily
-$_SESSION['debug'] = true;
+$_SESSION['debug'] = false;
 
 function calculateAverageRating($reviews) {
     if ($reviews->num_rows === 0) return 0;
@@ -36,7 +36,7 @@ if (!$product) {
 }
 
 
-$stmtReviews = $conn->prepare("SELECT r.*, u.name as reviewer_name 
+$stmtReviews = $conn->prepare("SELECT r.*, u.name as reviewer_name, u.profile_image 
                               FROM reviews r 
                               JOIN users u ON r.user_id = u.id 
                               WHERE r.product_id = ? 
@@ -45,18 +45,20 @@ $stmtReviews->bind_param("i", $product_id);
 $stmtReviews->execute();
 $reviewsResult = $stmtReviews->get_result();
 
-// Add debugging information
-if (isset($_SESSION['debug'])) {
-    echo "<pre>";
-    echo "Product ID: " . $product_id . "\n";
-    echo "Number of reviews: " . $reviewsResult->num_rows . "\n";
-    while ($row = $reviewsResult->fetch_assoc()) {
-        echo "Review by: " . htmlspecialchars($row['reviewer_name']) . 
-             " (User ID: " . $row['user_id'] . ")\n";
+// Function to get profile image as base64
+function getProfileImageBase64($imageFileName) {
+    if (!$imageFileName) {
+        return null;
     }
-    echo "</pre>";
-    $reviewsResult->data_seek(0);
+    
+    $image_path = "../uploads/" . $imageFileName;
+    if (file_exists($image_path)) {
+        return base64_encode(file_get_contents($image_path));
+    }
+    
+    return null;
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -413,8 +415,21 @@ if (isset($_SESSION['debug'])) {
 
         .reviewer-info {
             display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .reviewer-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .reviewer-details {
+            display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.25rem;
         }
 
         .reviewer-name {
@@ -573,26 +588,27 @@ if (isset($_SESSION['debug'])) {
                         }
                     ?>
                         <div class="review" data-review-id="<?php echo $review['id']; ?>">
-                            <div class="review-header">
-                                <div class="reviewer-info">
-                                    <img src="<?php 
-                                        if ($review['profile_image']) {
-                                            echo '/uploads/' . htmlspecialchars($review['profile_image']);
-                                        } else {
-                                            echo '/assets/images/default-avatar.png';
-                                        }
-                                    ?>" 
-                                        alt="<?php echo htmlspecialchars($review['reviewer_name']); ?>" 
-                                        class="reviewer-image">
-                                    <div class="reviewer-details">
-                                        <h4 class="reviewer-name"><?php echo htmlspecialchars($review['reviewer_name']); ?></h4>
-                                        <div class="review-rating">
-                                            <?php for($i = 1; $i <= 5; $i++): ?>
-                                                <i class="fas fa-star <?php echo ($i <= $review['rating']) ? 'filled' : ''; ?>"></i>
-                                            <?php endfor; ?>
-                                        </div>
-                                        <div class="review-date"><?php echo date('F j, Y', strtotime($review['created_at'])); ?></div>
+                            <div class="reviewer-info">
+                                <?php 
+                                $profile_image_data = getProfileImageBase64($review['profile_image']);
+                                if ($profile_image_data): 
+                                ?>
+                                    <img src="data:image/jpeg;base64,<?php echo $profile_image_data; ?>" 
+                                         alt="<?php echo htmlspecialchars($review['reviewer_name']); ?>" 
+                                         class="reviewer-image">
+                                <?php else: ?>
+                                    <img src="/assets/images/default-avatar.png" 
+                                         alt="<?php echo htmlspecialchars($review['reviewer_name']); ?>" 
+                                         class="reviewer-image">
+                                <?php endif; ?>
+                                <div class="reviewer-details">
+                                    <h4 class="reviewer-name"><?php echo htmlspecialchars($review['reviewer_name']); ?></h4>
+                                    <div class="review-rating">
+                                        <?php for($i = 1; $i <= 5; $i++): ?>
+                                            <i class="fas fa-star <?php echo ($i <= $review['rating']) ? 'filled' : ''; ?>"></i>
+                                        <?php endfor; ?>
                                     </div>
+                                    <div class="review-date"><?php echo date('F j, Y', strtotime($review['created_at'])); ?></div>
                                 </div>
                             </div>
                             <p class="review-comment"><?php echo htmlspecialchars($review['comment']); ?></p>
@@ -631,27 +647,27 @@ if (isset($_SESSION['debug'])) {
             const reviewDate = new Date(review.created_at);
             const formattedDate = reviewDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             
-            let imagePath = '';
-            if (review.profile_image) {
-                imagePath = '/uploads/' + review.profile_image;
+            let imageHtml = '';
+            if (review.profile_image_base64) {
+                imageHtml = `<img src="data:image/jpeg;base64,${review.profile_image_base64}" 
+                            alt="${review.reviewer_name}" 
+                            class="reviewer-image">`;
             } else {
-                imagePath = '/assets/images/default-avatar.png';
+                imageHtml = `<img src="/assets/images/default-avatar.png" 
+                            alt="${review.reviewer_name}" 
+                            class="reviewer-image">`;
             }
             
             return `
                 <div class="review" data-review-id="${review.id}">
-                    <div class="review-header">
-                        <div class="reviewer-info">
-                            <img src="${imagePath}" 
-                                alt="${review.reviewer_name}" 
-                                class="reviewer-image">
-                            <div class="reviewer-details">
-                                <h4 class="reviewer-name">${review.reviewer_name}</h4>
-                                <div class="review-rating">
-                                    ${getStarsHtml(review.rating)}
-                                </div>
-                                <div class="review-date">${formattedDate}</div>
+                    <div class="reviewer-info">
+                        ${imageHtml}
+                        <div class="reviewer-details">
+                            <h4 class="reviewer-name">${review.reviewer_name}</h4>
+                            <div class="review-rating">
+                                ${getStarsHtml(review.rating)}
                             </div>
+                            <div class="review-date">${formattedDate}</div>
                         </div>
                     </div>
                     <p class="review-comment">${review.comment}</p>

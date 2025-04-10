@@ -1,6 +1,6 @@
 -- Create the database
 
-USE hali07;
+USE artisenalley;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
