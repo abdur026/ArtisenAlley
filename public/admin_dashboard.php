@@ -247,12 +247,14 @@ function getUserPostsCount($conn, $user_id) {
     <div class="admin-header">
         <h1>Admin Dashboard</h1>
         <nav class="admin-nav">
-            <a href="index.php"><i class="fa fa-home"></i> Home</a>
-            <a href="admin_analytics.php"><i class="fa fa-chart-line"></i> Analytics</a>
-            <a href="admin_orders.php"><i class="fa fa-shopping-cart"></i> Orders</a>
-            <a href="admin_hot_threads.php"><i class="fa fa-fire"></i> Hot Threads</a>
-            <a href="admin_reports.php"><i class="fa fa-file-alt"></i> Reports</a>
-            <a href="logout.php"><i class="fa fa-sign-out"></i> Logout</a>
+            <a href="index.php"><i class="fas fa-home"></i> Home</a>
+            <a href="admin_dashboard.php"><i class="fas fa-users"></i> Users</a>
+            <a href="admin_analytics.php"><i class="fas fa-chart-line"></i> Analytics</a>
+            <a href="admin_orders.php"><i class="fas fa-shopping-cart"></i> Orders</a>
+            <a href="admin_products.php"><i class="fas fa-box"></i> Products</a>
+            <a href="admin_hot_threads.php"><i class="fas fa-fire"></i> Hot Threads</a>
+            <a href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
+            <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
     </div>
 

@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 
 // Process status update if form submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
-    if (csrf_token_is_valid('admin_order_form')) {
+    if (isset($_POST['csrf_token']) && validate_csrf_token($_POST['csrf_token'], 'admin_order_form')) {
         $order_id = intval($_POST['order_id']);
         $new_status = $_POST['status'];
         
@@ -424,7 +424,10 @@ $stats = $stats_result->fetch_assoc();
             <a href="index.php"><i class="fas fa-home"></i> Home</a>
             <a href="admin_dashboard.php"><i class="fas fa-users"></i> Users</a>
             <a href="admin_analytics.php"><i class="fas fa-chart-line"></i> Analytics</a>
-            <a href="admin_reports.php"><i class="fas fa-file-alt"></i> Reports</a>
+            <a href="admin_orders.php"><i class="fas fa-shopping-cart"></i> Orders</a>
+            <a href="admin_products.php"><i class="fas fa-box"></i> Products</a>
+            <a href="admin_hot_threads.php"><i class="fas fa-fire"></i> Hot Threads</a>
+            <a href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
             <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
     </div>

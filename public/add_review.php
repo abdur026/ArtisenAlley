@@ -69,6 +69,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $review_stmt->execute();
         $result = $review_stmt->get_result();
         $review = $result->fetch_assoc();
+
+        // Get profile image as base64 if it exists
+        $profile_image_base64 = null;
+        if ($review['profile_image']) {
+            $image_path = "../uploads/" . $review['profile_image'];
+            if (file_exists($image_path)) {
+                $profile_image_base64 = base64_encode(file_get_contents($image_path));
+            }
+        }
         
         if ($is_ajax) {
             header('Content-Type: application/json');
@@ -80,7 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'comment' => $review['comment'],
                     'created_at' => $review['created_at'],
                     'reviewer_name' => $review['reviewer_name'],
-                    'profile_image' => $review['profile_image']
+                    'profile_image' => $review['profile_image'],
+                    'profile_image_base64' => $profile_image_base64
                 ]
             ]);
             exit;
