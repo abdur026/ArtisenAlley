@@ -1,9 +1,9 @@
 <?php
 // Database configuration
 $servername = "localhost";
-$username = "root"; // Local development user
-$password = ""; // Empty password for local development
-$dbname = "artisenalley";
+$username = "hali07"; // Local development user
+$password = "hali07"; // Empty password for local development
+$dbname = "hali07";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);

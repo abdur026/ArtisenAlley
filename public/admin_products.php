@@ -3,6 +3,10 @@ session_start();
 require_once '../config/db.php';
 require_once '../includes/utils/csrf.php';
 
+// For debugging: Enable full error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Redirect if not admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header("Location: index.php");
@@ -13,6 +17,46 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['product_id'])) {
     $product_id = intval($_POST['product_id']);
     
+    // First, check if there are any order_items references from shipped orders
+    $stmt = $conn->prepare("
+        SELECT o.id, o.status, oi.id as order_item_id
+        FROM order_items oi 
+        JOIN orders o ON oi.order_id = o.id 
+        WHERE oi.product_id = ?
+    ");
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    // Debug information about product references
+    $order_references = [];
+    while ($row = $result->fetch_assoc()) {
+        $order_references[] = $row;
+    }
+    
+    if (!empty($order_references)) {
+        $debug_info = "Product has " . count($order_references) . " order references. ";
+        $debug_info .= "Order statuses: ";
+        foreach ($order_references as $ref) {
+            $debug_info .= "Order #{$ref['id']} ({$ref['status']}), ";
+        }
+        
+        // Only prevent deletion if there are pending orders
+        $has_pending = false;
+        foreach ($order_references as $ref) {
+            if ($ref['status'] === 'pending') {
+                $has_pending = true;
+                break;
+            }
+        }
+        
+        if ($has_pending) {
+            $_SESSION['error'] = "Cannot delete this product because it has pending orders. Please fulfill or cancel those orders first.";
+            header("Location: admin_products.php");
+            exit;
+        }
+    }
+    
     // Get the image filename before deleting the product
     $stmt = $conn->prepare("SELECT image FROM products WHERE id = ?");
     $stmt->bind_param("i", $product_id);
@@ -20,22 +64,72 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['pr
     $result = $stmt->get_result();
     $product = $result->fetch_assoc();
     
-    // Delete the product
-    $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
-    $stmt->bind_param("i", $product_id);
+    if (!$product) {
+        $_SESSION['error'] = "Product not found.";
+        header("Location: admin_products.php");
+        exit;
+    }
     
-    if ($stmt->execute()) {
-        // Delete the image file if it's not the default
-        if ($product['image'] && $product['image'] !== 'default_product.png' && $product['image'] !== 'placeholder.jpg') {
-            $image_path = "../uploads/" . $product['image'];
-            if (file_exists($image_path)) {
-                unlink($image_path);
-            }
+    // Get the database name from the connection
+    $dbName = 'hali07'; // using the known database name from config/db.php
+    
+    // Delete the product
+    try {
+        // Begin transaction
+        $conn->begin_transaction();
+        
+        // Delete records from tables that reference the product - only if they exist
+        $deletion_counts = [];
+        
+        // Check if order_items table exists and delete from it
+        $result = $conn->query("SHOW TABLES FROM `hali07` LIKE 'order_items'");
+        if ($result->num_rows > 0) {
+            $stmt = $conn->prepare("DELETE FROM order_items WHERE product_id = ?");
+            $stmt->bind_param("i", $product_id);
+            $stmt->execute();
+            $deletion_counts['order_items'] = $stmt->affected_rows;
+        } else {
+            $deletion_counts['order_items'] = 0;
         }
         
-        $_SESSION['success'] = "Product deleted successfully!";
-    } else {
-        $_SESSION['error'] = "Error deleting product: " . $stmt->error;
+        // Check if reviews table exists and delete from it
+        $result = $conn->query("SHOW TABLES FROM `hali07` LIKE 'reviews'");
+        if ($result->num_rows > 0) {
+            $stmt = $conn->prepare("DELETE FROM reviews WHERE product_id = ?");
+            $stmt->bind_param("i", $product_id);
+            $stmt->execute();
+            $deletion_counts['reviews'] = $stmt->affected_rows;
+        } else {
+            $deletion_counts['reviews'] = 0;
+        }
+        
+        // We'll skip the wishlist table since it doesn't exist
+        
+        // Then delete the product
+        $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->bind_param("i", $product_id);
+        $result = $stmt->execute();
+        $affected_products = $stmt->affected_rows;
+        
+        if ($result && $affected_products > 0) {
+            // Delete the image file if it's not the default
+            if ($product['image'] && $product['image'] !== 'default_product.png' && $product['image'] !== 'placeholder.jpg') {
+                $image_path = "../uploads/" . $product['image'];
+                if (file_exists($image_path)) {
+                    unlink($image_path);
+                }
+            }
+            
+            // Commit the transaction
+            $conn->commit();
+            $_SESSION['success'] = "Product deleted successfully!";
+        } else {
+            $conn->rollback();
+            $_SESSION['error'] = "Error deleting product: " . $conn->error;
+        }
+    } catch (Exception $e) {
+        $conn->rollback();
+        $_SESSION['error'] = "Exception when deleting product: " . $e->getMessage();
     }
     
     header("Location: admin_products.php");
@@ -112,16 +206,27 @@ $products_result = $stmt->get_result();
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid;
+        }
+        
+        .alert i {
+            margin-right: 10px;
+            font-size: 18px;
         }
         
         .alert-success {
             background-color: #dcfce7;
             color: #16a34a;
+            border-left-color: #16a34a;
         }
         
         .alert-error {
             background-color: #fee2e2;
             color: #dc2626;
+            border-left-color: #dc2626;
         }
         
         .action-bar {
@@ -261,6 +366,112 @@ $products_result = $stmt->get_result();
             color: white;
         }
     </style>
+    <script>
+        // Custom confirmation dialog for product deletion
+        function confirmDelete(productId, productName) {
+            // Create modal background
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            modal.style.zIndex = '1000';
+            modal.style.display = 'flex';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.backgroundColor = 'white';
+            modalContent.style.borderRadius = '8px';
+            modalContent.style.padding = '25px';
+            modalContent.style.width = '400px';
+            modalContent.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+            modalContent.style.textAlign = 'center';
+            
+            // Create heading
+            const heading = document.createElement('h3');
+            heading.innerText = 'Delete Product';
+            heading.style.margin = '0 0 15px 0';
+            heading.style.color = '#2c3e50';
+            
+            // Create message
+            const message = document.createElement('p');
+            message.innerHTML = `Are you sure you want to delete <strong>${productName}</strong>?<br>This action cannot be undone.`;
+            message.style.marginBottom = '20px';
+            message.style.color = '#555';
+            
+            // Create buttons container
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.display = 'flex';
+            buttonContainer.style.justifyContent = 'center';
+            buttonContainer.style.gap = '15px';
+            
+            // Create cancel button
+            const cancelButton = document.createElement('button');
+            cancelButton.innerText = 'Cancel';
+            cancelButton.style.padding = '10px 20px';
+            cancelButton.style.border = '1px solid #ddd';
+            cancelButton.style.borderRadius = '5px';
+            cancelButton.style.backgroundColor = '#f8f9fa';
+            cancelButton.style.color = '#555';
+            cancelButton.style.cursor = 'pointer';
+            cancelButton.style.fontWeight = '600';
+            
+            // Create delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.innerText = 'Delete';
+            deleteButton.style.padding = '10px 20px';
+            deleteButton.style.border = 'none';
+            deleteButton.style.borderRadius = '5px';
+            deleteButton.style.backgroundColor = '#e74c3c';
+            deleteButton.style.color = 'white';
+            deleteButton.style.cursor = 'pointer';
+            deleteButton.style.fontWeight = '600';
+            
+            // Add event listeners
+            cancelButton.addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            deleteButton.addEventListener('click', () => {
+                // Submit the delete form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.style.display = 'none';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete';
+                
+                const productIdInput = document.createElement('input');
+                productIdInput.type = 'hidden';
+                productIdInput.name = 'product_id';
+                productIdInput.value = productId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(productIdInput);
+                document.body.appendChild(form);
+                form.submit();
+            });
+            
+            // Assemble modal
+            buttonContainer.appendChild(cancelButton);
+            buttonContainer.appendChild(deleteButton);
+            
+            modalContent.appendChild(heading);
+            modalContent.appendChild(message);
+            modalContent.appendChild(buttonContainer);
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            return false; // Prevent form submission
+        }
+    </script>
 </head>
 <body>
     <div class="admin-header">
@@ -332,7 +543,7 @@ $products_result = $stmt->get_result();
                                 <a href="product.php?id=<?php echo $product['id']; ?>" class="view-btn">
                                     <i class="fas fa-eye"></i> View
                                 </a>
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                                <form method="POST" style="display: inline;" onsubmit="return confirmDelete(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars(addslashes($product['name'])); ?>');">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                     <button type="submit" class="delete-btn">

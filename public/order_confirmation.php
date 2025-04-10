@@ -36,7 +36,7 @@ $order = $orderResult->fetch_assoc();
 $stmtItems = $conn->prepare("
     SELECT oi.*, p.name, p.image 
     FROM order_items oi 
-    JOIN products p ON oi.product_id = p.id 
+    LEFT JOIN products p ON oi.product_id = p.id 
     WHERE oi.order_id = ?
 ");
 $stmtItems->bind_param("i", $order_id);
@@ -392,11 +392,16 @@ $statusClass = $statusClasses[$order['status']] ?? 'status-pending';
             
             <?php while ($item = $items->fetch_assoc()): ?>
                 <div class="order-item">
-                    <img src="assets/images/<?php echo htmlspecialchars($item['image']); ?>" 
-                         alt="<?php echo htmlspecialchars($item['name']); ?>"
+                    <img src="assets/images/<?php echo htmlspecialchars($item['image'] ?? 'placeholder.jpg'); ?>" 
+                         alt="<?php echo htmlspecialchars($item['name'] ?? 'Product Removed'); ?>"
                          onerror="this.src='assets/images/placeholder.jpg'">
                     <div class="item-details">
-                        <div class="item-name"><?php echo htmlspecialchars($item['name']); ?></div>
+                        <div class="item-name">
+                            <?php echo htmlspecialchars($item['name'] ?? 'Product no longer available'); ?>
+                            <?php if (!isset($item['name'])): ?>
+                                <span style="color: #e74c3c; font-size: 0.9em;">(Product has been removed from catalog)</span>
+                            <?php endif; ?>
+                        </div>
                         <div class="item-price">$<?php echo number_format($item['price'], 2); ?> each</div>
                         <div class="item-quantity">Quantity: <?php echo htmlspecialchars($item['quantity']); ?></div>
                     </div>

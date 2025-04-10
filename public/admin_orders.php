@@ -11,26 +11,32 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 
 // Process status update if form submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
-    if (isset($_POST['csrf_token']) && validate_csrf_token($_POST['csrf_token'], 'admin_order_form')) {
+    if (isset($_POST['csrf_token']) && isset($_POST['order_id'])) {
         $order_id = intval($_POST['order_id']);
-        $new_status = $_POST['status'];
+        $form_id = 'admin_order_form_' . $order_id;
         
-        // Validate status
-        $valid_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-        if (in_array($new_status, $valid_statuses)) {
-            $stmt = $conn->prepare("UPDATE orders SET status = ? WHERE id = ?");
-            $stmt->bind_param("si", $new_status, $order_id);
+        if (validate_csrf_token($_POST['csrf_token'], $form_id)) {
+            $new_status = $_POST['status'];
             
-            if ($stmt->execute()) {
-                $_SESSION['success'] = "Order #$order_id status updated to " . ucfirst($new_status);
+            // Validate status
+            $valid_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+            if (in_array($new_status, $valid_statuses)) {
+                $stmt = $conn->prepare("UPDATE orders SET status = ? WHERE id = ?");
+                $stmt->bind_param("si", $new_status, $order_id);
+                
+                if ($stmt->execute()) {
+                    $_SESSION['success'] = "Order #$order_id status updated to " . ucfirst($new_status);
+                } else {
+                    $_SESSION['error'] = "Error updating order status: " . $conn->error;
+                }
             } else {
-                $_SESSION['error'] = "Error updating order status: " . $conn->error;
+                $_SESSION['error'] = "Invalid status provided";
             }
         } else {
-            $_SESSION['error'] = "Invalid status provided";
+            $_SESSION['error'] = "Invalid security token";
         }
     } else {
-        $_SESSION['error'] = "Invalid security token";
+        $_SESSION['error'] = "Missing required parameters";
     }
     
     // Redirect to maintain RESTful behavior
@@ -136,6 +142,15 @@ $stats_query = "
 ";
 $stats_result = $conn->query($stats_query);
 $stats = $stats_result->fetch_assoc();
+
+// Add error handling for missing data
+foreach (['total_orders', 'total_revenue', 'avg_order_value', 'unique_customers', 
+         'pending_orders', 'processing_orders', 'shipped_orders', 'delivered_orders', 
+         'cancelled_orders'] as $key) {
+    if (!isset($stats[$key])) {
+        $stats[$key] = 0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -561,7 +576,11 @@ $stats = $stats_result->fetch_assoc();
                             </td>
                             <td>
                                 <form action="admin_orders.php" method="POST" style="display: inline-block;">
-                                    <?php echo csrf_token_field('admin_order_form'); ?>
+                                    <?php 
+                                    // Use a unique form identifier for each order
+                                    $form_id = 'admin_order_form_' . $order['id'];
+                                    echo csrf_token_field($form_id); 
+                                    ?>
                                     <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                                     <select name="status" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
                                         <option value="pending" <?php echo $order['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
@@ -627,7 +646,8 @@ $stats = $stats_result->fetch_assoc();
     <?php endif; ?>
     
     <script>
-        // Change form submit on select change
+        // Remove automatic submission on select change - this was causing the issue
+        /*
         document.querySelectorAll('select[name="status"]').forEach(select => {
             select.addEventListener('change', function() {
                 if (this.form.querySelector('input[name="order_id"]')) {
@@ -635,6 +655,7 @@ $stats = $stats_result->fetch_assoc();
                 }
             });
         });
+        */
     </script>
 </body>
 </html> 
