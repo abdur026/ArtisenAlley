@@ -1,140 +1,96 @@
 # ArtisanAlley 🎨
 
-```
- █████╗ ██████╗ ████████╗██╗███████╗ █████╗ ███╗   ██╗     █████╗ ██╗     ██╗     ███████╗██╗   ██╗
-██╔══██╗██╔══██╗╚══██╔══╝██║██╔════╝██╔══██╗████╗  ██║    ██╔══██╗██║     ██║     ██╔════╝╚██╗ ██╔╝
-███████║██████╔╝   ██║   ██║███████╗███████║██╔██╗ ██║    ███████║██║     ██║     █████╗   ╚████╔╝ 
-██╔══██║██╔══██╗   ██║   ██║╚════██║██╔══██║██║╚██╗██║    ██╔══██║██║     ██║     ██╔══╝    ╚██╔╝  
-██║  ██║██║  ██║   ██║   ██║███████║██║  ██║██║ ╚████║    ██║  ██║███████╗███████╗███████╗   ██║   
-╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝    ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝   ╚═╝   
-```
+A handcrafted marketplace for artisanal products built with PHP and MySQL.
 
-A modern e-commerce platform showcasing handcrafted artisanal products, built with PHP and MySQL.
+## About the Project
 
-> 🖼️ **Note**: Screenshots of the platform will be added soon to showcase the user interface and features.
+ArtisanAlley is an e-commerce platform designed to showcase and sell unique, handcrafted items from independent artisans. The platform connects creators with customers who appreciate handmade quality and craftsmanship.
 
-## 🌟 Features
+## Features
 
-- **User Authentication System**
+- **Product Browsing & Search**
+  - Browse products by category
+  - Detailed product pages with images
+  - Search functionality with filters
+  
+- **User Accounts**
   - Secure registration and login
-  - Profile management with customizable user details
-  - Password recovery functionality
-
-- **Product Management**
-  - Browse diverse categories of handcrafted items
-  - Detailed product pages with high-quality images
-  - Advanced search and filtering options
-  - Price and category-based filtering
-
-- **Shopping Cart**
-  - Real-time cart updates
-  - Quantity adjustment
-  - Persistent cart across sessions
-  - Free shipping calculations on orders over $50
-
+  - User profiles with personal information
+  - Order history tracking
+  
+- **Shopping Experience**
+  - Session-based shopping cart
+  - Quantity management
+  - Checkout process
+  
 - **Review System**
-  - Star-based rating system (1-5 stars)
-  - Detailed written reviews
-  - Average rating display
-  - Community reviews section
-  - Personal review history in user profiles
+  - Star ratings (1-5 stars)
+  - Written reviews with user attribution
+  - Average rating displays
+  
+- **Admin Dashboard**
+  - Product management
+  - Order processing
+  - User management
+  - Analytics reporting
 
-- **Responsive Design**
-  - Modern, clean interface
-  - Mobile-friendly layout
-  - Intuitive navigation
-  - Smooth animations and transitions
+## Tech Stack
 
-## 🚀 Getting Started
+- **Backend**: PHP
+- **Database**: MySQL
+- **Frontend**: HTML, CSS, JavaScript
+- **UI Libraries**: Font Awesome for icons
+- **Styling**: Custom CSS with responsive design
+
+## Getting Started
 
 ### Prerequisites
 
-- PHP 7.4 or higher
-- MySQL 5.7 or higher
+- PHP 7.4+
+- MySQL 5.7+
 - Web server (Apache/Nginx)
-- Composer (PHP package manager)
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/artisanalley.git
-   cd artisanalley
+   git clone https://github.com/yourusername/ArtisanAlley.git
+   cd ArtisanAlley
    ```
 
-2. Set up the database:
+2. Import the database:
    - Create a new MySQL database
-   - Import the provided SQL schema from `database/schema.sql`
-   - Configure database connection in `config/db.php`
+   - Import `database/schema.sql` to set up tables
+   - Optionally import `database/sample_data.sql` for demo products
 
-3. Install dependencies:
-   ```bash
-   composer install
-   ```
+3. Configure the database connection:
+   - Update credentials in `config/db.php`
 
-4. Configure your web server:
-   - Set document root to the `public` directory
-   - Ensure proper permissions for file uploads
+4. Set up your web server:
+   - Configure document root to point to the project
+   - Ensure proper permissions for `uploads` directory
 
-5. Start the application:
-   - Visit `http://localhost/` in your web browser
-   - Register a new account to start exploring
+5. Visit the site in your browser
 
-## 💡 Usage
+## Project Structure
 
-1. **Browse Products**
-   - Navigate through categories
-   - Use search functionality
-   - Filter by price range
+- `public/` - Front-facing PHP files
+- `includes/` - Reusable PHP components
+- `config/` - Configuration files
+- `database/` - Database scripts
+- `uploads/` - User-uploaded content
+- `src/` - CSS and JavaScript files
 
-2. **Shopping**
-   - Add items to cart
-   - Adjust quantities
-   - Proceed to checkout
+## Development Team
 
-3. **Reviews**
-   - View product reviews
-   - Write your own reviews
-   - Rate products
-   - View your review history
+- Khizar Aamir
+- Abdur Rehman
+- Haider Ali
 
-4. **Profile Management**
-   - Update personal information
-   - View order history
-   - Manage reviews
-   - Track favorite items
+## License
 
-## 🔒 Security Features
-
-- Password hashing
-- SQL injection prevention
-- XSS protection
-- CSRF token validation
-- Secure session management
-
-## 🛠️ Technical Stack
-
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Backend**: PHP
-- **Database**: MySQL
-- **Additional Libraries**:
-  - Font Awesome (icons)
-  - Modern CSS Grid/Flexbox
-  - Custom animations
-
-## 📝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 👥 Authors
-
-- Khizar Aamir, Abdur Rehman, Haider Ali
-
+This project is available for educational purposes. Please contact the authors for commercial use.
 
 ---
 
-Made with ❤️ for artisans and craft lovers everywhere
+Made with ❤️ for artisans and craft lovers
