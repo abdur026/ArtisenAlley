@@ -396,11 +396,6 @@ $orders_result = $stmt->get_result();
             </ul>
             
             <div class="user-actions">
-                <?php if ($user['role'] !== 'admin'): ?>
-                    <a href="toggle_user.php?id=<?php echo $user['id']; ?>" class="action-btn <?php echo ($user['role'] === 'disabled' ? '' : 'danger'); ?>">
-                        <?php echo ($user['role'] === 'disabled' ? '<i class="fas fa-user-check"></i> Enable Account' : '<i class="fas fa-user-slash"></i> Disable Account'); ?>
-                    </a>
-                <?php endif; ?>
             </div>
         </div>
         

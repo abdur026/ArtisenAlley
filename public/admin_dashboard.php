@@ -321,11 +321,6 @@ function getUserPostsCount($conn, $user_id) {
                             <a href="admin_user_view.php?id=<?php echo $row['id']; ?>" class="btn btn-info btn-sm">
                                 <i class="bi bi-eye"></i> View
                             </a>
-                            <?php if ($row['role'] != 'admin'): ?>
-                                <a href="toggle_user.php?id=<?php echo $row['id']; ?>" class="btn btn-<?php echo ($row['role'] == 'disabled') ? 'success' : 'warning'; ?> btn-sm">
-                                    <?php echo ($row['role'] == 'disabled') ? 'Enable' : 'Disable'; ?>
-                                </a>
-                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endwhile; ?>

@@ -465,12 +465,6 @@ $orders_result = $stmt->get_result();
                             My Reviews
                         </a>
                     </li>
-                    <li>
-                        <a href="settings.php">
-                            <i class="fas fa-cog"></i>
-                            Settings
-                        </a>
-                    </li>
                 </ul>
             </aside>
 
