@@ -34,10 +34,3 @@ php tests/run.php
    ```
 3. Use the `assert_true()` function for assertions
 4. Your test will be automatically discovered by the test runner
-
-## Important Notes
-
-- These tests are designed to run **without affecting the production database**
-- Most database tests use mock objects instead of real connections
-- Tests are completely isolated from the main application code
-- No production code was modified to implement these tests 
