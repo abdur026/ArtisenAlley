@@ -1,4 +1,4 @@
-# ArtisanAlley 🎨
+# Artisan Alley 🎨
 
 A handcrafted marketplace for artisanal products built with PHP and MySQL.
 
