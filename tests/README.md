@@ -1,4 +1,4 @@
-# ArtisenAlley Unit Tests
+# Artisan Alley Unit Tests
 
 This directory contains unit tests for the ArtisenAlley marketplace application. These tests are designed to verify the functionality of key components.
 
