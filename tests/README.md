@@ -1,11 +1,9 @@
 # ArtisenAlley Unit Tests
 
-This directory contains unit tests for the ArtisenAlley marketplace application. These tests are designed to verify the functionality of key components without affecting the production environment.
-
-## Test Structure
+This directory contains unit tests for the ArtisenAlley marketplace application. These tests are designed to verify the functionality of key components.
 
 - `bootstrap.php` - Sets up the test environment
-- `TestUtils.php` - Contains utility functions and mocks for testing
+- `TestUtils.php` - Contains utility functions 
 - `run.php` - Script to run all tests
 - `unit/` - Directory containing all unit tests
 
@@ -22,7 +20,7 @@ php tests/run.php
 - **ProductUtilsTest.php** - Tests the product utility functions (average rating calculation)
 - **ImageUtilsTest.php** - Tests image utility functions (profile image encoding)
 - **CsrfTest.php** - Tests CSRF protection utilities
-- **DatabaseTest.php** - Tests database operations with mock objects
+- **DatabaseTest.php** - Tests database operations 
 
 ## Writing New Tests
 
