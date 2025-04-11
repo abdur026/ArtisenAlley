@@ -4,7 +4,7 @@ A handcrafted marketplace for artisanal products built with PHP and MySQL.
 
 ## About the Project
 
-ArtisanAlley is an e-commerce platform designed to showcase and sell unique, handcrafted items from independent artisans. The platform connects creators with customers who appreciate handmade quality and craftsmanship.
+Artisan Alley is an e-commerce platform designed to showcase and sell unique, handcrafted items from independent artisans. The platform connects creators with customers who appreciate handmade quality and craftsmanship.
 
 ## Features
 
